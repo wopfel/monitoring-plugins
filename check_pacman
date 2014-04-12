@@ -1,0 +1,180 @@
+#!/usr/bin/perl -w
+#
+# check_pacman.pl - monitoring plugin
+#
+# Copyright (C) 2014 Bernd Arnold
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+#
+
+use POSIX;
+use strict;
+use FindBin;
+use lib "$FindBin::Bin";
+use lib "/usr/local/icinga/libexec";
+use utils qw($TIMEOUT %ERRORS &print_revision &support);
+
+use Getopt::Long;
+Getopt::Long::Configure('bundling');
+
+my $PROGNAME = "check_pacman";
+
+sub print_help();
+sub print_usage();
+sub process_arguments();
+
+# Safety settings
+$ENV{'PATH'}     = '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin';
+$ENV{'BASH_ENV'} = ''; 
+$ENV{'ENV'}      = '';
+
+my $status;
+
+my $state = "UNKNOWN";
+my $answer = "";
+my $perfdata = "";
+my $opt_h;
+my $opt_V;
+my $timeout;
+
+
+
+# Checking passed options (arguments)
+$status = process_arguments();
+
+# Print help and exit if an error happened during parsing the arguments
+if ($status != 0) {
+    print_help();
+    exit $ERRORS{'UNKNOWN'};
+}
+
+
+# Just in case of problems, let's not hang the monitoring system
+$SIG{'ALRM'} = sub {
+     print "ERROR: No response after $timeout seconds (alarm timeout)\n";
+     exit $ERRORS{"UNKNOWN"};
+};
+alarm($timeout);
+
+
+
+# Get Pacman's list of packages that needs updating
+my $output = `/usr/bin/pacman -Qu 2>&1`;
+
+
+# Split lines
+my @lines = split /\n/, $output;
+
+
+# Number of lines from output
+my $pkgcount = scalar @lines;
+$perfdata .= "packages=$pkgcount ";
+
+
+if ( $pkgcount == 0 ) {
+    $answer .= "No packages need updating. ";
+    $state = "OK";
+} else {
+    $answer .= "$pkgcount package(s) need updating. ";
+    $state = "WARNING";
+}
+
+print "$state: $answer";
+print "| $perfdata\n"  if  $perfdata;
+
+exit $ERRORS{$state};
+
+
+
+
+#
+# Print plugin's usage
+#
+sub print_usage() {
+
+    print "\n";
+    print "Usage: \n";
+    print "$PROGNAME\n";
+    print "Copyright (C) 2014 Bernd Arnold\n";
+    # No official plugin ;-)
+    # support();
+    printf "\n\n";
+
+}
+
+
+
+#
+# Print plugin's help
+#
+sub print_help() {
+
+    # No official plugin ;-)
+    # print_revision( $PROGNAME, '0.1' );
+
+    print_usage();
+
+    print "$PROGNAME plugin for monitoring pacman's \n";
+    print "status of packages that needs updating.\n";
+    print "\nUsage:\n";
+
+    print "   -t (--timeout)    seconds before the plugin times out (default=$TIMEOUT)\n";
+    print "   -V (--version)    plugin version\n";
+    print "   -h (--help)       usage help \n\n";
+
+    # No official plugin ;-)
+    # print_revision( $PROGNAME, '0.1' );
+    
+}
+
+
+
+#
+# Process command line options (arguments)
+#
+sub process_arguments() {
+
+    $status = GetOptions(
+        "version|V"    => \$opt_V,
+        "help|h"       => \$opt_h,
+        "timeout|t=i"  => \$timeout,
+    );
+        
+    if ( $status == 0 ) {
+        print_help();
+        exit $ERRORS{'UNKNOWN'};
+    }
+
+    if ( $opt_V ) {
+        print "$PROGNAME version 0.1\n";
+        print "The plugin comes with ABSOLUTELY NO WARRANTY. You may redistribute\n";
+        print "copies of the plugin under the terms of the GNU General Public License.\n";
+        print "For more information about these matters, see the file named COPYING.\n";
+        exit $ERRORS{'UNKNOWN'};
+    }
+
+    if ( $opt_h ) {
+        print_help();
+        exit $ERRORS{'UNKNOWN'};
+    }
+
+    unless ( defined $timeout ) {
+        $timeout = $TIMEOUT;
+    }
+
+    return $ERRORS{"OK"};
+
+}
+
