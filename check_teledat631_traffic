@@ -1,0 +1,141 @@
+#! /usr/bin/perl -w
+
+# check_teledat631_traffic.pl  Copyright (C) 2010 Bernd Arnold
+#
+# ...
+#
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# you should have received a copy of the GNU General Public License
+# along with this program (or with Nagios);  if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA
+
+use strict;
+use English;
+use Getopt::Long;
+use vars qw($PROGNAME);
+use lib "/usr/local/icinga/libexec" ;
+use utils qw (%ERRORS &print_revision);
+require LWP::UserAgent;
+
+
+sub print_help();
+sub print_usage();
+
+my ($opt_H, $opt_h, $opt_V);
+my ($result, $message);
+
+$PROGNAME="check_teledat631_traffic";
+
+Getopt::Long::Configure('bundling');
+GetOptions(
+    "V"   => \$opt_V, "version"	=> \$opt_V,
+    "h"   => \$opt_h, "help"	=> \$opt_h,
+    "H=s" => \$opt_H, "host=s"  => \$opt_H,
+);
+
+if ($opt_V) {
+    # No official plugin ;-)
+    # print_revision($PROGNAME, '##TODO##');
+    exit $ERRORS{'UNKNOWN'};
+}
+
+if ($opt_h) {
+    print_help();
+    exit $ERRORS{'UNKNOWN'};
+}
+
+if ( ! $opt_H ) {
+    print_help();
+    exit $ERRORS{'UNKNOWN'};
+}
+
+#####
+
+my $ua = LWP::UserAgent->new;
+ 
+my $response = $ua->get("http://$opt_H/rpAuth.html");
+ 
+if ($response->is_success) {
+#     print $response->decoded_content;  # or whatever
+}
+else {
+    print "Traffic: $response->status_line";
+    exit $ERRORS{CRITICAL};
+}
+
+
+
+# Sample output:
+#       <td background="Images/pic_c_sl.gif" width="10" height="5" >&nbsp;</td><td width="14" >&nbsp;</td><td width="230" align=left><font face="Arial" size="2" color="#000000"><strong>Monatliche 
+#        Datenmenge </strong></font></td><td align=right width="130">&nbsp;</td><td align=left width="65"><font face="Arial" size="2" color="#000000"><b>&nbsp;</b></font></td><td background="Images/pic_c_sr.gif" width="6" height="5">&nbsp;</td></tr><tr align=center> 
+#      <td background="Images/pic_c_sl.gif" width="10" height="5" >&nbsp;</td><td width="14" >&nbsp;</td><td width="230" align=left><font face="Arial" size="2" color="#000000"><strong>Aktueller 
+#        Verbrauch</strong></font></td><td align=right width="130">&nbsp;</td><td width="65">&nbsp;</td><td background="Images/pic_c_sr.gif" width="6" height="5">&nbsp;</td></tr><tr align=center> 
+#      <td background="Images/pic_c_sl.gif" width="10" height="5" >&nbsp;</td><td width="14" >&nbsp;</td><td width="230" align=left bgcolor="#FFFFFF" height="20"> 
+#        <img src="Images/bar.gif" width="96" height="20" border="0" align="absmiddle">      </td><td align=left colspan="2" width="195"><b><font face="Arial, Helvetica, sans-serif" size="3" color="#FFFFFF">&nbsp;
+#        14716     </font><font face="Arial" size="2" color="#000000">von</font><font face="Arial, Helvetica, sans-serif" size="3" color="#FFFFFF">
+#        35000     </font></b><font face="Arial" size="2" color="#000000"><b>&nbsp;MByte</b></font>
+
+my $text = "";
+my $perfdata = "";
+
+my $verbrauch_mb;
+my $limit_mb;
+
+if ( $response->decoded_content =~ m{Monatlicher.*?Verbrauch.*?Monatliche.*?Datenmenge.*?Aktueller.*?Verbrauch.*? +(\d+) +</font><font face="Arial" size="2" color="#000000">von</font>.*? +(\d+) +</font></b><font face="Arial" size="2" color="#000000"><b>&nbsp;MByte</b></font>}sm ) {
+
+    $verbrauch_mb = $1;
+    $limit_mb     = $2;
+
+    $text .= "$1 von $2 MByte verbraucht. ";
+    #print "===== $1 ====\n";
+    #print "===== $2 ====\n";
+
+}
+
+
+
+
+
+$result = 'OK';
+
+if ( $verbrauch_mb and $limit_mb ) {
+
+    $perfdata .= "used_mb=$verbrauch_mb ";
+
+} else {
+
+    $result = 'CRITICAL';
+
+}
+
+
+print "Traffic: $text | $perfdata\n";
+exit $ERRORS{$result};
+
+sub print_usage () {
+    print "Usage:\n";
+    print "  $PROGNAME [-H <host>]\n";
+    print "  $PROGNAME [-h | --help]\n";
+    print "  $PROGNAME [-V | --version]\n";
+}
+
+sub print_help () {
+    # No official plugin ;-)
+    # print_revision($PROGNAME, '##TODO');
+    print "Copyright (c) 2010 Bernd Arnold\n\n";
+    print_usage();
+    print "\n";
+    print "\n";
+}
+

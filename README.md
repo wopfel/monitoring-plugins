@@ -16,3 +16,14 @@ You have to run `pacman -Sy` on your own to get the recent list of packages and 
 Example output:
 > WARNING: 22 package(s) need updating. | packages=22
 
+
+## check_teledat631_traffic
+
+This plugin is for getting data from the Teledat Router 631, a DSL router I've used some years ago. I don't know if this plugin still works.
+I just want to share it, maybe it's useful for someone.
+
+The DSL modem had a web interface showing the amount of DSL data passing by for the current month.
+The plugin grabs the monthly consumption value and the maximum limit value and provides the consumption value as performance data.
+
+The plugin doesn't check the values. It only reports errors if the plugin can't parse the values frmo the web interface.
+
