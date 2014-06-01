@@ -72,6 +72,10 @@ alarm($timeout);
 
 
 
+#
+#   Check packages
+#
+
 # Get Pacman's list of packages that needs updating
 my $output = `/usr/bin/pacman -Qu 2>&1`;
 
@@ -90,6 +94,68 @@ if ( $pkgcount == 0 ) {
 } else {
     $answer .= "$pkgcount package(s) need updating. ";
     push @warning_msgs, "Found packages that needs an update";
+}
+
+
+#
+#   Check age of repository files
+#
+
+my $dirname = '/var/lib/pacman/sync';
+
+opendir( my $dh, $dirname );
+
+if ( ! $dh ) {
+    print "ERROR: Could not open directory '$dirname'.\n";
+    exit $ERRORS{"UNKNOWN"};
+};
+
+my @dbfiles = grep { /\.db$/ } readdir( $dh );
+
+closedir $dh;
+
+my $dbfilecount = scalar @dbfiles;
+
+if ( $dbfilecount < 3 ) {
+    push @warning_msgs, "Too few db files found ($dbfilecount)";
+}
+
+# Current Unix time stamp
+my $uts = time;
+
+# Timestamp and name of oldest file
+my $oldest_db_file_ts;
+my $oldest_db_file_name;
+
+# Check each file
+for my $filename ( @dbfiles ) {
+
+    $filename = "$dirname/$filename";
+
+    # Get mtime of file (ctime didn't match output of ls -la)
+    my $mtime = ( stat $filename )[ 9 ];
+
+    # Determine age of file (in seconds)
+    my $age = $uts - $mtime;
+
+    # Check age (in seconds) of file (4*24*3600 means 4 days)
+    if ( $age > 4*24*3600 ) {
+        push @warning_msgs, "File '$filename' is too old";
+    }
+
+    #print "$filename $mtime $age\n";
+
+    # Remeber oldest file
+    if ( ! defined $oldest_db_file_name  or  $mtime < $oldest_db_file_ts ) {
+        $oldest_db_file_ts = $age;
+        $oldest_db_file_name = $filename;
+    }
+
+}
+
+if ( defined $oldest_db_file_name  and  defined $oldest_db_file_ts ) {
+    $answer .= "Oldest DB file is $oldest_db_file_name. ";
+    # TODO: Add strftime of oldest_db_file_ts
 }
 
 
