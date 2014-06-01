@@ -49,6 +49,8 @@ my $opt_h;
 my $opt_V;
 my $timeout;
 
+my @warning_msgs = ();
+my @critical_msgs = ();
 
 
 # Checking passed options (arguments)
@@ -85,14 +87,26 @@ $perfdata .= "packages=$pkgcount ";
 
 if ( $pkgcount == 0 ) {
     $answer .= "No packages need updating. ";
-    $state = "OK";
 } else {
     $answer .= "$pkgcount package(s) need updating. ";
-    $state = "WARNING";
+    push @warning_msgs, "Found packages that needs an update";
 }
 
+
+#
+#   OK/Warning/Critical logic
+#
+
+$state = "OK";
+$state = "WARNING"   if  scalar @warning_msgs  > 0;
+$state = "CRITICAL"  if  scalar @critical_msgs > 0;
+
 print "$state: $answer";
-print "| $perfdata\n"  if  $perfdata;
+print "| $perfdata"  if  $perfdata;
+print "\n";
+
+print "Critical messages: ", join( "\n", @critical_msgs ), "\n"  if  scalar @critical_msgs > 0;
+print "Warning messages: ",  join( "\n", @warning_msgs ),  "\n"  if  scalar @warning_msgs  > 0;
 
 exit $ERRORS{$state};
 
