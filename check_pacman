@@ -105,8 +105,8 @@ print "$state: $answer";
 print "| $perfdata"  if  $perfdata;
 print "\n";
 
-print "Critical messages: ", join( "\n", @critical_msgs ), "\n"  if  scalar @critical_msgs > 0;
-print "Warning messages: ",  join( "\n", @warning_msgs ),  "\n"  if  scalar @warning_msgs  > 0;
+print "Critical messages: ", join( ", ", @critical_msgs ), ".\n"  if  scalar @critical_msgs > 0;
+print "Warning messages: ",  join( ", ", @warning_msgs ),  ".\n"  if  scalar @warning_msgs  > 0;
 
 exit $ERRORS{$state};
 
