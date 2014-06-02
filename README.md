@@ -16,6 +16,8 @@ You have to run `pacman -Sy` on your own to get the recent list of packages and 
 Example output:
 > WARNING: 22 package(s) need updating. | packages=22
 
+Since June 1st 2014 the age of the db files is checked, too. The plugin quits with exit code 1 if there are any db files older than 4 days.
+
 
 ## check_teledat631_traffic
 
@@ -26,4 +28,10 @@ The DSL modem had a web interface showing the amount of DSL data passing by for 
 The plugin grabs the monthly consumption value and the maximum limit value and provides the consumption value as performance data.
 
 The plugin doesn't check the values. It only reports errors if the plugin can't parse the values frmo the web interface.
+
+
+## TODO
+
+* Make check scripts customizable using Getopt::Long
+
 

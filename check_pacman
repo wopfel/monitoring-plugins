@@ -141,11 +141,12 @@ for my $filename ( @dbfiles ) {
     # Check age (in seconds) of file (4*24*3600 means 4 days)
     if ( $age > 4*24*3600 ) {
         push @warning_msgs, "File '$filename' is too old";
+        # TODO: Add strftime of $mtime
     }
 
     #print "$filename $mtime $age\n";
 
-    # Remeber oldest file
+    # Remember oldest file
     if ( ! defined $oldest_db_file_name  or  $mtime < $oldest_db_file_ts ) {
         $oldest_db_file_ts = $age;
         $oldest_db_file_name = $filename;
