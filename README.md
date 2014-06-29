@@ -18,6 +18,15 @@ Example output:
 
 Since June 1st 2014 the age of the db files is checked, too. The plugin quits with exit code 1 if there are any db files older than 4 days.
 
+Added another use lib definition so it runs on my Raspberry Pi. For this, NRPE and some monitoring plugins have to be installed. On my Pi, the plugins are installed in `/usr/share/nagios/libexec`. I've added `command[check_pacman]=/usr/local/bin/check_pacman` to the NRPE config file and restarted NRPE. You can use something like this as a service check definition:
+
+> define service {
+>     use                             service-template
+>     host_name                       the-raspberry-pi-hostname-or-ip-address
+>     service_description             Pacman
+>     check_command                   check_nrpe!check_pacman
+> }
+
 
 ## check_teledat631_traffic
 
