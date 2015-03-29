@@ -1,0 +1,173 @@
+#! /usr/bin/perl -w
+
+# check_downornotworking.pl     Copyright (C) 2015 Bernd Arnold
+#
+# ...
+#
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# you should have received a copy of the GNU General Public License
+# along with this program (or with Nagios);  if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA
+
+use strict;
+use English;
+use Getopt::Long;
+#use File::stat;
+use vars qw($PROGNAME);
+use lib "/usr/local/icinga/libexec" ;
+use utils qw (%ERRORS &print_revision &support);
+require LWP::UserAgent;
+
+
+sub print_help ();
+sub print_usage ();
+
+my ($opt_h, $opt_V);
+my ($result, $message, $age, $size, $st, $site);
+
+$PROGNAME="check_downornotworking";
+
+Getopt::Long::Configure('bundling');
+GetOptions(
+    "s=s"   => \$site,  "site=s"    => \$site,
+    "V"     => \$opt_V, "version"   => \$opt_V,
+    "h"     => \$opt_h, "help"      => \$opt_h,
+);
+
+if ( $opt_V ) {
+    print_revision($PROGNAME, '##TODO##');
+    exit $ERRORS{'UNKNOWN'};
+}
+
+if ( $opt_h ) {
+    print_help();
+    exit $ERRORS{'UNKNOWN'};
+}
+
+if ( ! $site ) {
+    print_help();
+    exit $ERRORS{'UNKNOWN'};
+}
+
+if ( $site !~ /^[-_0-9.A-Za-z]+$/ ) {
+    print "Error: Illegal characters in '$site'!\n";
+    print_help();
+    exit $ERRORS{'UNKNOWN'};
+}
+
+#####
+
+my $ua = LWP::UserAgent->new;
+$ua->timeout(20);
+
+# Agent setzen (oder: <p>The owner of this website (downornotworking.com) has banned your access based on your browser's signature (1cebfba369be0bf9-ua22).</p>)
+$ua->agent('Mozilla/5.0');
+ 
+# Check manually:
+# curl 'https://downornotworking.com/isitdownrightnow.com/'
+
+my $url = "https://downornotworking.com/$site/";
+
+#print "<<$url>>\n";
+
+my $response = $ua->get( $url );
+#print $response->content;
+ 
+if ( ! $response->is_success ) {
+    print "UNKNOWN: Could not fetch info from downornotworking.\n";
+    exit $ERRORS{UNKNOWN};
+}
+
+# Sample result OK:
+# We were able to load google.com from our server. It isn't down for us. Average ping time: 83ms. Last ping: 85ms.
+
+# Sample result DOWN:
+#             </h1>
+#             <p>
+#                 Checked URL:
+#                 <a href='http://isitdownrightnow.com' target='_blank'>
+#                     http://isitdownrightnow.com
+#                 </a>
+#             </p>
+#             <p>
+#                 
+#                     
+#                     
+#                         We couldn't load isitdownrightnow.com from our server. It appears to be down and probably isn't working for anybody. Average ping time: 427ms. Last ping: 1000ms.
+#                     
+#                 
+#             </p>
+#         </div>
+
+my $output = $response->content;
+
+#print "Output: >> $output\n";
+
+if ( $output =~ m{We were able to load \S+ from our server\. It isn't down for us\.} ) {
+    print "OK: Site '$site' is up and reachable according to downornotworking.com. ";
+    # Get performance data
+    # Average ping time: 83ms. Last ping: 85ms.
+    if ( $output =~ m{Average ping time: ([\d.]+ms)\. Last ping: ([\d.]+ms)\.} ) {
+        my $avgping = $1;
+        my $lastping = $2;
+        print "| avg_ping_time=$avgping last_ping_time=$lastping ";
+    }
+    print "\n";
+    exit $ERRORS{OK};
+}
+
+
+# Seems the site is down...
+
+my ( $msg ) = $output =~ m{(We couldn't load .*?Last ping:.*?ms)};
+
+print "WARNING: Site '$site' seems to be down according to downornotworking.com. ";
+
+# Average ping time: 83ms. Last ping: 85ms.
+if ( $output =~ m{Average ping time: ([\d.]+ms)\. Last ping: ([\d.]+ms)\.} ) {
+    my $avgping = $1;
+    my $lastping = $2;
+    print "| avg_ping_time=$avgping last_ping_time=$lastping ";
+}
+print "\n";
+print "Message: $msg.\n";
+
+exit $ERRORS{WARNING};
+
+
+# Should be never reached
+exit $ERRORS{UNKNOWN};
+
+
+
+
+
+sub print_usage () {
+        print "Usage:\n";
+        print "  $PROGNAME\n";
+        print "            [-h | --help]\n";
+        print "            [-V | --version]\n";
+        print "            [-s | --site]  example.org\n";
+}
+
+sub print_help () {
+        # No official plugin ;-)
+        #print_revision($PROGNAME, '##TODO');
+        print "Copyright (C) 2015 Bernd Arnold\n\n";
+        print_usage();
+        print "\n";
+        # No official plugin ;-)
+        #support();
+}
+
