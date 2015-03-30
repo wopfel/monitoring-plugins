@@ -36,7 +36,7 @@ I just want to share it, maybe it's useful for someone.
 The DSL modem had a web interface showing the amount of DSL data passing by for the current month.
 The plugin grabs the monthly consumption value and the maximum limit value and provides the consumption value as performance data.
 
-The plugin doesn't check the values. It only reports errors if the plugin can't parse the values frmo the web interface.
+The plugin doesn't check the values. It only reports errors if the plugin can't parse the values from the web interface.
 
 
 ## TODO
