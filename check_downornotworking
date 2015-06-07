@@ -86,6 +86,8 @@ my $response = $ua->get( $url );
  
 if ( ! $response->is_success ) {
     print "UNKNOWN: Could not fetch info from downornotworking.\n";
+    print $response->content;
+    print "\n";
     exit $ERRORS{UNKNOWN};
 }
 
