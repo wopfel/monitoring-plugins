@@ -39,6 +39,16 @@ The plugin grabs the monthly consumption value and the maximum limit value and p
 The plugin doesn't check the values. It only reports errors if the plugin can't parse the values from the web interface.
 
 
+## check_downornotworking
+
+This plugin checks if the specified site (like google.com) is available using downornotworking.com.
+
+
+## check_isitdownrightnow
+
+This plugin checks if the specified site (like google.com) is available using isitdownrightnow.com.
+
+
 ## TODO
 
 * Make check scripts customizable using Getopt::Long
