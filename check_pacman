@@ -151,7 +151,7 @@ for my $filename ( @dbfiles ) {
 
     # Remember oldest file
     if ( ! defined $oldest_db_file_name  or  $mtime < $oldest_db_file_ts ) {
-        $oldest_db_file_ts = $age;
+        $oldest_db_file_ts = $mtime;
         $oldest_db_file_name = $filename;
     }
 
