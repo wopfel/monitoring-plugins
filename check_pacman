@@ -129,30 +129,44 @@ my $uts = time;
 my $oldest_db_file_ts;
 my $oldest_db_file_name;
 
+my %max_age_hours = ( "core.db"      =>  2 * 24,  # 2 days
+                      "extra.db"     =>  3 * 24,  # 3 days
+                      "community.db" =>  5 * 24,  # 5 days
+                      "aur.db"       => 80 * 24,  # 80 days
+                    );
+
 # Check each file
 for my $filename ( @dbfiles ) {
 
-    $filename = "$dirname/$filename";
+    my $fullfilename = "$dirname/$filename";
 
     # Get mtime of file (ctime didn't match output of ls -la)
-    my $mtime = ( stat $filename )[ 9 ];
+    my $mtime = ( stat $fullfilename )[ 9 ];
 
     # Determine age of file (in seconds)
     my $age = $uts - $mtime;
 
-    # Check age (in seconds) of file (4*24*3600 means 4 days)
-    if ( $age > 4*24*3600 ) {
-        push @warning_msgs, "File '$filename' is too old";
+    # Default maximum age in hours (20 days)
+    my $max_file_age_hours = 20 * 24;
+
+    if ( defined( $max_age_hours{$filename} ) ) {
+        $max_file_age_hours = $max_age_hours{$filename};
+    }
+
+    # Check age (in seconds) of file
+    if ( $age > $max_file_age_hours * 3600 ) {
+        push @warning_msgs, "File '$fullfilename' is too old (" . (scalar localtime($mtime)) . ")";
         # TODO: Add strftime of $mtime
     }
 
-    #print "$filename $mtime $age\n";
     push @additional_msgs, "File '$filename' was last changed " . (scalar localtime($mtime)) . ".";
+
+    #print "$fullfilename $mtime $age\n";
 
     # Remember oldest file
     if ( ! defined $oldest_db_file_name  or  $mtime < $oldest_db_file_ts ) {
         $oldest_db_file_ts = $mtime;
-        $oldest_db_file_name = $filename;
+        $oldest_db_file_name = $fullfilename;
     }
 
 }
