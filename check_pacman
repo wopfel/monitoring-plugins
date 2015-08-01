@@ -24,6 +24,7 @@ use strict;
 use FindBin;
 use lib "$FindBin::Bin";
 use lib "/usr/local/icinga/libexec";
+use lib "/usr/lib/monitoring-plugins";
 use utils qw($TIMEOUT %ERRORS &print_revision &support);
 
 use Getopt::Long;
