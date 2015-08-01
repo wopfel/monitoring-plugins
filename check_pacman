@@ -52,6 +52,7 @@ my $timeout;
 
 my @warning_msgs = ();
 my @critical_msgs = ();
+my @additional_msgs = ();
 
 
 # Checking passed options (arguments)
@@ -146,6 +147,7 @@ for my $filename ( @dbfiles ) {
     }
 
     #print "$filename $mtime $age\n";
+    push @additional_msgs, "File '$filename' was last changed " . (scalar localtime($mtime)) . ".";
 
     # Remember oldest file
     if ( ! defined $oldest_db_file_name  or  $mtime < $oldest_db_file_ts ) {
@@ -156,7 +158,7 @@ for my $filename ( @dbfiles ) {
 }
 
 if ( defined $oldest_db_file_name  and  defined $oldest_db_file_ts ) {
-    $answer .= "Oldest DB file is $oldest_db_file_name. ";
+    push @additional_msgs, "Oldest DB file is $oldest_db_file_name.";
     # TODO: Add strftime of oldest_db_file_ts
 }
 
@@ -175,6 +177,8 @@ print "\n";
 
 print "Critical messages: ", join( ", ", @critical_msgs ), ".\n"  if  scalar @critical_msgs > 0;
 print "Warning messages: ",  join( ", ", @warning_msgs ),  ".\n"  if  scalar @warning_msgs  > 0;
+
+print "Additional messages:\n",  join( "\n", @additional_msgs ),  ".\n"  if  scalar @additional_msgs  > 0;
 
 exit $ERRORS{$state};
 
