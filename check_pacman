@@ -93,7 +93,7 @@ if ( $pkgcount == 0 ) {
     $answer .= "No packages need updating. ";
 } else {
     $answer .= "$pkgcount package(s) need updating. ";
-    push @warning_msgs, "Found packages that needs an update";
+    push @warning_msgs, "Found packages that need an update";
 }
 
 
