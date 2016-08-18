@@ -130,7 +130,7 @@ sub print_usage () {
         print "  $PROGNAME\n";
         print "            [-h | --help]\n";
         print "            [-V | --version]\n";
-        print "            [-s | --site]  example.org\n";
+        print "            [-s | --site]  example.org  (without www.)\n";
 }
 
 sub print_help () {
