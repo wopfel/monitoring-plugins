@@ -84,6 +84,7 @@ my $output = `/usr/bin/pacman -Qu 2>&1`;
 
 # Split lines
 my @lines = split /\n/, $output;
+@lines = grep !/\[ignored\]/, @lines;
 
 
 # Number of lines from output
