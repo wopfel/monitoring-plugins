@@ -108,12 +108,14 @@ if ( $days > 14 ) {
 }
 
 my $pretty_uptime = "";
-$pretty_uptime .= "$weeks weeks, "   if  $weeks;
-$pretty_uptime .= "$days days, "     if  $days;
-$pretty_uptime .= "$hours hours, "   if  $hours;
-$pretty_uptime .= "$mins minutes, "  if  $mins;
-$pretty_uptime =~ s/, $/ and /;  # Replace last occurence with "and"
-$pretty_uptime .= "$secs seconds";
+$pretty_uptime .= sprintf( "%d week%s, ",   $weeks, $weeks == 1 ? "" : "s" )  if  $weeks;
+$pretty_uptime .= sprintf( "%d day%s, ",    $days, $days == 1 ? "" : "s" )    if  $days;
+$pretty_uptime .= sprintf( "%d hour%s, ",   $hours, $hours == 1 ? "" : "s" )  if  $hours;
+$pretty_uptime .= sprintf( "%d minute%s, ", $mins, $mins == 1 ? "" : "s" )    if  $mins;
+# Replace last occurence of comma with "and"
+$pretty_uptime =~ s/, $/ and /;
+# Always print the seconds (though it may be 0 seconds)
+$pretty_uptime .= sprintf( "%d second%s", $secs, $secs == 1 ? "" : "s" );
 
 
 # Default to catch errors in program
