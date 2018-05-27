@@ -29,8 +29,7 @@ use POSIX;
 use strict;
 use Getopt::Long;
 use vars qw($opt_V $opt_h $opt_v $verbose $PROGNAME $opt_w $opt_c
-					$opt_M $mailq $status $state $msg $msg_q $msg_p $opt_W $opt_C $mailq @lines
-					%srcdomains %dstdomains);
+					$status $state $msg);
 use FindBin;
 use lib "$FindBin::Bin";
 use lib "/usr/lib/monitoring-plugins/";
