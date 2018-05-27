@@ -1,11 +1,7 @@
 #!/usr/bin/perl -w
 
-# check_mailq - check to see how many messages are in the smtp queue awating
-#   transmittal.  
+# check_uptime - check uptime to see how long the system is running.
 #
-# Initial version support sendmail's mailq command
-#  Support for mutiple sendmail queues (Carlos Canau)
-#  Support for qmail (Benjamin Schmid)
 
 # License Information:
 # This program is free software; you can redistribute it and/or modify
