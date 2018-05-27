@@ -29,6 +29,7 @@ use POSIX;
 use strict;
 use Getopt::Long;
 use vars qw($opt_V $opt_h $opt_v $verbose $PROGNAME $opt_w $opt_c
+					$opt_f $opt_s
 					$status $state $msg);
 use FindBin;
 use lib "$FindBin::Bin";
@@ -132,9 +133,11 @@ if ( $uptime_seconds > $opt_c ) {
 $msg = "$state_str: ";
 
 $msg .= "uptime is $uptime_seconds seconds. ";
-$msg .= "Running for $pretty_uptime. ";
-chomp( my $up_since = `uptime -s` );
-$msg .= "Running since $up_since. ";
+$msg .= "Running for $pretty_uptime. "  if  $opt_f;
+if ( $opt_s ) {
+	chomp( my $up_since = `uptime -s` );
+	$msg .= "Running since $up_since. ";
+}
 
 $state = $ERRORS{$state_str};
 
@@ -154,6 +157,8 @@ sub process_arguments(){
 		 "h"   => \$opt_h, "help"		=> \$opt_h,
 		 "w=s" => \$opt_w, "warning=s"  => \$opt_w,   # warning if above this number
 		 "c=s" => \$opt_c, "critical=s" => \$opt_c,	  # critical if above this number
+		 "f"   => \$opt_f, "for"        => \$opt_f,	  # show "running for ..."
+		 "s"   => \$opt_s, "since"      => \$opt_s,	  # show "running since ..."
 		 );
 
 	if ($opt_V) {
@@ -241,6 +246,8 @@ sub print_help () {
 	print "\n";
 	print "-w (--warning)   = Min. number of uptime to generate warning\n";
 	print "-c (--critical)  = Min. number of uptime to generate critical alert ( w < c )\n";
+	print "-f (--for)       = Show uptime in a pretty format (Running for x weeks, x days, ...)\n";
+	print "-s (--since)     = Show last boot in yyyy-mm-dd HH:MM:SS format (output from 'uptime -s')\n";
 	print "-h (--help)\n";
 	print "-V (--version)\n";
 	print "-v (--verbose)   = debugging output\n";
