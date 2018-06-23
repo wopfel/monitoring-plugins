@@ -70,6 +70,7 @@ if ( $site !~ /^[-_0-9.A-Za-z]+$/ ) {
 
 my $ua = LWP::UserAgent->new;
 $ua->timeout(10);
+$ua->agent('Mozilla/5.0');
  
 # Check manually:
 # curl 'http://www.isitdownrightnow.com/check.php?domain=google.com'
