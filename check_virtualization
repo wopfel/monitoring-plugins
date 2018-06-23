@@ -1,0 +1,107 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+
+
+my $verbose = 0;
+my $perfdata;
+my $warning_count = 0;
+my $error_count = 0;
+my @add_info = ();  # Additinal info
+
+my $lxc_out = qx/ pct list /;
+my $qm_out =  qx/ qm list /;
+
+my @lxc_out = split /\n/, $lxc_out;
+my @qm_out  = split /\n/, $qm_out;
+
+#print "<<LXC:\n$lxc_out\n>>\n"  if  $verbose;
+#print "<<QM:\n$qm_out\n>>\n"    if  $verbose;
+
+print "<<LXC list:\n@lxc_out\n>>\n"  if  $verbose;
+print "<<QM list:\n@qm_out\n>>\n"    if  $verbose;
+
+#my @lxc;
+#my @qm;
+
+my %lxc_status = ( "running" => 0, "total" => 0 );
+my %qm_status  = ( "running" => 0, "total" => 0 );
+
+for ( @lxc_out ) {
+
+	next if /^VMID/;
+
+	# VMID       Status     Lock         Name
+	# TODO: Unaware of "Lock"
+	my ( $vmid, $status, $name ) = /^(\d+)\s+(stopped|running)\s+(.*?)\s*$/;
+
+	$lxc_status{'running'}++  if  $status eq "running";
+	$lxc_status{'stopped'}++  if  $status eq "stopped";
+	$lxc_status{'total'}++;
+
+	if ( $status eq "stopped" ) {
+		if ( $name =~ /^testct.*/ ) {
+			# testct* may be down, no warning raised
+			push @add_info, "[OK] container $name is stopped";
+		} else {
+			$warning_count++;
+			push @add_info, "[WARN] container $name is stopped";
+		}
+	}
+
+}
+
+for ( @qm_out ) {
+
+	next if /^\s+VMID/;
+
+	#       VMID NAME                 STATUS     MEM(MB)    BOOTDISK(GB) PID
+	my ( $vmid, $name, $status ) = /^\s+(\d+)\s+(\S+)\s+(stopped|running)\s+/;
+
+	$qm_status{'running'}++  if  $status eq "running";
+	$qm_status{'stopped'}++  if  $status eq "stopped";
+	$qm_status{'total'}++;
+
+	if ( $status eq "stopped" ) {
+		if ( $name =~ /^testct.*/ ) {
+			# testct* may be down, no warning raised
+			push @add_info, "[OK] VM $name is stopped";
+		} else {
+			$warning_count++;
+			push @add_info, "[WARN] VM $name is stopped";
+		}
+	}
+
+}
+
+#LXC_COUNT=$( pct list | grep -P -c '^\d+\s+' )
+#LXC_RUNNING=$( pct list | grep -P -c '^\d+\s+running' )
+
+#QM_COUNT=$( qm list | grep -P -c '^\s+\d+' )
+#QM_RUNNING=$( qm list | grep -P '^\s+\d+' | grep -P -c '\s+running\s+\d' )
+
+#echo -n "
+#print "| $LXC_COUNT $LXC_RUNNING $QM_COUNT $QM_RUNNING";
+
+$perfdata .= " lxc_running=" . $lxc_status{'running'};
+$perfdata .= " lxc_total=" . $lxc_status{'total'};
+$perfdata .= " qm_running=" . $qm_status{'running'};
+$perfdata .= " qm_total=" . $qm_status{'total'};
+
+print "OK: "        if  $error_count == 0 and $warning_count == 0;
+print "WARNING: "   if  $error_count == 0 and $warning_count != 0;
+print "CRITICAL: "  if  $error_count != 0;
+printf "%d/%d containers running, ", $lxc_status{'running'}, $lxc_status{'total'};
+printf "%d/%d VMs running. ", $qm_status{'running'}, $qm_status{'total'};
+
+print "|$perfdata"  if  $perfdata;
+print "\n";
+print join "\n", @add_info  if  @add_info;
+print "\n";
+
+exit 2 if $error_count;
+exit 1 if $warning_count;
+exit 0;
+

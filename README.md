@@ -49,6 +49,20 @@ This plugin checks if the specified site (like google.com) is available using do
 This plugin checks if the specified site (like google.com) is available using isitdownrightnow.com.
 
 
+## check_virtualization
+
+Just a quick-n-dirty solution for checking virtual machines (VMs) and containers (LXC) on a proxmox host, including perfdata.
+
+Internally, the commands "pct list" and "qm list" are used.
+
+The result is:
+
+```
+OK: 9/10 containers running, 14/14 VMs running. | lxc_running=9 lxc_total=10 qm_running=14 qm_total=14
+[OK] container testct1 is stopped
+```
+
+
 ## TODO
 
 * Make check scripts customizable using Getopt::Long
