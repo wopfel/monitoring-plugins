@@ -24,7 +24,7 @@ use strict;
 use English;
 use Getopt::Long;
 use vars qw($PROGNAME);
-use lib "/usr/local/icinga/libexec" ;
+use lib "/usr/lib/monitoring-plugins";
 use utils qw (%ERRORS &print_revision);
 require LWP::UserAgent;
 
