@@ -62,6 +62,8 @@ OK: 9/10 containers running, 14/14 VMs running. | lxc_running=9 lxc_total=10 qm_
 [OK] container testct1 is stopped
 ```
 
+For stopped containers matching the pattern `testct*` there is no error raised.
+
 
 ## TODO
 
