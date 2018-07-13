@@ -78,6 +78,8 @@ OK: running, pid 20483. | CPU_use=1434.45seconds BlkIO_use=429.38MiB Memory_use=
 
 Raises UNKNOWN if the container is not found and CRITICAL if the container is not in a running state.
 
+Requires root privileges (with sudo, for example).
+
 
 ## TODO
 
