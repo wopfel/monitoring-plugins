@@ -1,0 +1,87 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+
+
+my $verbose = 0;
+my $perfdata;
+my $warning_count = 0;
+my $error_count = 0;
+my @add_info = ();  # Additinal info
+
+my $lxc_id = $ARGV[0];
+if ( $lxc_id !~ /^\d+$/ ) {
+	print "Error: First parameter must be the container id (numeric).\n";
+	exit 3;  # UNKNOWN
+}
+
+my $lxc_out = qx@ /usr/bin/lxc-info $lxc_id 2>&1 @;
+
+if ( $lxc_out =~ /doesn't exist/ ) {
+	print "UNKNOWN: container $lxc_id doesn't exist.\n";
+	exit 3;  # UNKNOWN
+}
+
+my @lxc_out = split /\n/, $lxc_out;
+
+print "<<LXC:\n$lxc_out\n>>\n"  if  $verbose;
+
+print "<<LXC list:\n@lxc_out\n>>\n"  if  $verbose;
+
+my %lxc_status = ( "running" => 0, "total" => 0 );
+my %qm_status  = ( "running" => 0, "total" => 0 );
+
+# Sample output:
+# Name:           510
+# State:          RUNNING
+# PID:            20483
+# IP:             192.168.5.2
+# CPU use:        1433.59 seconds
+# BlkIO use:      429.38 MiB
+# Memory use:     195.99 MiB
+# KMem use:       44.29 MiB
+# Link:           veth510i0
+#  TX bytes:      99.26 MiB
+#  RX bytes:      519.41 MiB
+#  Total bytes:   618.66 MiB
+
+my $state;
+my $pid;
+
+for ( "State", "PID", "IP", "CPU use", "BlkIO use", "Memory use", "KMem use", "TX bytes", "RX bytes" ) {
+
+	if ( $lxc_out =~ /^\s*$_:\s+(.*)$/m ) {
+		my $value = $1;
+		$state = $value  if  $_ eq "State";
+		$pid   = $value  if  $_ eq "PID";
+		# Perf data
+		( my $perfkey = $_ ) =~ s/ /_/g;
+		$value =~ s/ //g;
+		$perfdata .= " $perfkey=$value"  if  $perfkey !~ /State|IP|PID/;
+	}
+
+}
+
+
+if ( $state ne "RUNNING" ) {
+	$error_count++;
+	push @add_info, "[CRIT] not in running state";
+}
+
+
+print "OK: "        if  $error_count == 0 and $warning_count == 0;
+print "WARNING: "   if  $error_count == 0 and $warning_count != 0;
+print "CRITICAL: "  if  $error_count != 0;
+print "\L$state, PID $pid. ";
+
+print "|$perfdata"  if  $perfdata;
+print "\n";
+print join "\n", @add_info  if  @add_info;
+print "\n";
+
+exit 2 if $error_count;
+exit 1 if $warning_count;
+exit 0;
+

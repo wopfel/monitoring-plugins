@@ -65,6 +65,20 @@ OK: 9/10 containers running, 14/14 VMs running. | lxc_running=9 lxc_total=10 qm_
 For stopped containers matching the pattern `testct*` there is no error raised.
 
 
+## check_lxc-info
+
+Checks the output of `lxc-info LXC_ID` and gives some performance data. Tested on Proxmox.
+
+Info: the perfdata may not be valid syntax (seconds/s, M/MiB). TODO: check that.
+
+```
+/usr/local/bin/check_lxc-info 510
+OK: running, pid 20483. | CPU_use=1434.45seconds BlkIO_use=429.38MiB Memory_use=196.00MiB KMem_use=44.29MiB TX_bytes=99.28MiB RX_bytes=519.86MiB
+```
+
+Raises UNKNOWN if the container is not found and CRITICAL if the container is not in a running state.
+
+
 ## TODO
 
 * Make check scripts customizable using Getopt::Long
