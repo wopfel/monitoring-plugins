@@ -71,10 +71,28 @@ if ( $state ne "RUNNING" ) {
 }
 
 
+# Get some more details
+my $pct_out = qx@ /usr/sbin/pct config $lxc_id @;
+
+print "<<PCT CONFIG:\n$pct_out\n>>\n"  if  $verbose;
+#
+# Example output:
+# arch: amd64
+# cores: 1
+# hostname: ansible
+# memory: 512
+# net0: name=eth0,bridge=vmbr0,gw=192.168.xxx.xxx,hwaddr=XX.XX.XX.XX.XX.XX,ip=192.168.xxx.xxx/24,type=veth
+# ostype: archlinux
+# rootfs: vms2:510/vm-510-disk-1.raw,size=8G
+# swap: 512
+
+( my $hostname ) = $pct_out =~ /^hostname: (.*)$/m;
+
+
 print "OK: "        if  $error_count == 0 and $warning_count == 0;
 print "WARNING: "   if  $error_count == 0 and $warning_count != 0;
 print "CRITICAL: "  if  $error_count != 0;
-print "\L$state, PID $pid. ";
+print "$hostname, \L$state, PID $pid. ";
 
 print "|$perfdata"  if  $perfdata;
 print "\n";
