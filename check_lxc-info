@@ -75,7 +75,7 @@ if ( $state ne "RUNNING" ) {
 my $pct_out = qx@ /usr/sbin/pct config $lxc_id @;
 
 print "<<PCT CONFIG:\n$pct_out\n>>\n"  if  $verbose;
-#
+
 # Example output:
 # arch: amd64
 # cores: 1
