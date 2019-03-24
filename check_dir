@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# Quick-and-dirty
+# Monitoring plugin for Icinga etc.
+# Checks, if the given parameter is a valid directory
+
 # USAGE: /usr/local/bin/check_dir /directory-which-should-be/checked
+
+# Quick-and-dirty
 
 if [[ -z $1 ]] ; then
     echo UNKNOWN: No parameter given
