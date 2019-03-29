@@ -87,7 +87,7 @@ Checks the free space of a LVM logical volume. If you have a file system on an L
 
 On my proxmox host, I have an LV for hosting thin logical volumes (created with lvcreate -T ...). 
 
-This plugin cares about the usage of the "master" logical volume.
+This plugin cares about the usage of the "master" logical volume. The thresholds are hard-coded: warning when > 80, critical when > 90 %.
 
 Example usage:
 
