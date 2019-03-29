@@ -81,6 +81,22 @@ Raises UNKNOWN if the container is not found and CRITICAL if the container is no
 Requires root privileges (with sudo, for example).
 
 
+## check_proxmox_lv
+
+Checks the free space of a LVM logical volume. If you have a file system on an LV, you don't need this check script. You can use df based utilities for checking the file system (check_disk from the official monitoring-plugins, for example).
+
+On my proxmox host, I have an LV for hosting thin logical volumes (created with lvcreate -T ...). 
+
+This plugin cares about the usage of the "master" logical volume.
+
+Example usage:
+
+```
+# /usr/local/bin/check_proxmox_lv vg_ssd_evo/vms3
+OK: LV vg_ssd_evo/vms3. Allocated pool data 61.97 %, metadata 29.22 %. | alloc_pool_data_pct=61.97 alloc_meta_data_pct=29.22
+```
+
+
 ## TODO
 
 * Make check scripts customizable using Getopt::Long

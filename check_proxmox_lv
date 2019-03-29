@@ -1,0 +1,79 @@
+#!/usr/bin/perl
+
+##################
+#
+#  Simple Perl script to check lv on a Proxmox host
+#
+#  Usage:   check_proxmox_lv  vg_name/lv_name
+#
+#  Copyright (C) 2010 Bernd Arnold
+#  https://github.com/wopfel/monitoring-plugins
+#
+##################
+
+use strict;
+use warnings;
+
+my $verbose = 0;
+my $errors = 0;
+my $warnings = 0;
+
+
+if ( scalar @ARGV != 1 ) {
+    print "Error: only 1 argument allowed. Usage: $0 vg/lv\n";
+    exit 3;
+}
+
+my $vg_lv = $ARGV[0];
+
+# Check for invalid characters
+if ( $vg_lv !~ /^[-_a-z0-9]+\/[-_a-z0-9]+$/ ) {
+    print "Error: illegal characters in parameter found. Usage: $0 vg/lv\n";
+    exit 3;
+}
+
+$ENV{'LANG'} = "C";
+my $output = qx/lvdisplay $vg_lv/;
+
+print $output if $verbose;
+
+###
+
+( my $alloc_pool_data ) = $output =~ /^\s*Allocated pool data\s*([0-9.]+)%/m;
+print "$alloc_pool_data" if $verbose;
+if ( $alloc_pool_data > 90 ) {
+    $errors++;
+} elsif ( $alloc_pool_data > 80 ) {
+    $warnings++;
+}
+
+###
+
+( my $alloc_meta_data ) = $output =~ /^\s*Allocated metadata\s*([0-9.]+)%/m;
+print "$alloc_meta_data" if $verbose;
+if ( $alloc_meta_data > 90 ) {
+    $errors++;
+} elsif ( $alloc_meta_data > 80 ) {
+    $warnings++;
+}
+
+###
+
+if ( $errors ) {
+    print "CRITICAL: ";
+} elsif ( $warnings) {
+    print "WARNING: ";
+} else {
+    print "OK: ";
+}
+
+print "LV $vg_lv. Allocated pool data $alloc_pool_data %, metadata $alloc_meta_data %. ";
+print "| alloc_pool_data_pct=$alloc_pool_data alloc_meta_data_pct=$alloc_meta_data\n";
+
+if ( $errors ) {
+    exit 2;
+} elsif ( $warnings) {
+    exit 1;
+} else {
+    exit 0;
+}
