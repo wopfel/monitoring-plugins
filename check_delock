@@ -1,0 +1,40 @@
+#!/usr/bin/perl
+
+##################
+#
+#  Check a Delock Tasmota 11827
+#
+#  Usage:   ...
+#
+#  Copyright (C) 2021 Bernd Arnold
+#  https://github.com/wopfel/monitoring-plugins
+#
+##################
+
+use strict;
+use warnings;
+require LWP::UserAgent;
+use JSON;
+use Data::Dumper;
+
+my $opt_verbose = 1;
+
+my $ua = LWP::UserAgent->new;
+
+my $response = $ua->get( "http://192.168.14.14/cm?cmnd=Status 0" );
+
+if ( $response->is_success ) {
+#     print $response->decoded_content;  # or whatever
+}
+else {
+    print "UNKNOWN: $response->status_line";
+    exit 3;
+}
+
+print $response->decoded_content if $opt_verbose;
+
+my $response_json = decode_json( $response->decoded_content );
+
+print Dumper( $response_json->{'StatusSNS'}->{'ENERGY'} );
+
+#TODO many code to be done...
