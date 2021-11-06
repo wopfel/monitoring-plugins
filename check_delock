@@ -30,7 +30,7 @@ my @additional = ();
 
 
 # Process command line options
-GetOptions( "h|host=s"           => \$opt_host,
+GetOptions( "h|hostname=s"       => \$opt_host,
             "v|verbose"          => \$opt_verbose,
             #"help"               => \$opt_help,
           )
