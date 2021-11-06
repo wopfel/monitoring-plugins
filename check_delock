@@ -16,8 +16,10 @@ use warnings;
 require LWP::UserAgent;
 use JSON;
 use Data::Dumper;
+use Getopt::Long;
 
 my $opt_verbose = 1;
+my $opt_host;
 
 my $answer = "";
 my $crit_count = 0;
@@ -25,9 +27,25 @@ my $warn_count = 0;
 my $status = "Unknown";
 my @perfdata = ();
 
+
+# Process command line options
+GetOptions( "h|host=s"           => \$opt_host,
+            "v|verbose"          => \$opt_verbose,
+            #"help"               => \$opt_help,
+          )
+or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
+#or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 1; };
+
+if ( ! $opt_host ) {
+    print STDERR "Error: option -host missing.\n";
+    exit 4;
+}
+
+
+
 my $ua = LWP::UserAgent->new;
 
-my $response = $ua->get( "http://192.168.14.14/cm?cmnd=Status 0" );
+my $response = $ua->get( "http://$opt_host/cm?cmnd=Status 0" );
 
 if ( $response->is_success ) {
 #     print $response->decoded_content;  # or whatever
