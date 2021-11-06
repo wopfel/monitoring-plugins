@@ -19,6 +19,12 @@ use Data::Dumper;
 
 my $opt_verbose = 1;
 
+my $answer = "";
+my $crit_count = 0;
+my $warn_count = 0;
+my $status = "Unknown";
+my @perfdata = ();
+
 my $ua = LWP::UserAgent->new;
 
 my $response = $ua->get( "http://192.168.14.14/cm?cmnd=Status 0" );
@@ -35,6 +41,46 @@ print $response->decoded_content if $opt_verbose;
 
 my $response_json = decode_json( $response->decoded_content );
 
-print Dumper( $response_json->{'StatusSNS'}->{'ENERGY'} );
+print Dumper( $response_json ) if $opt_verbose;
+if ( my $friendlyname = $response_json->{'Status'}->{'FriendlyName'}->[0] ) {
+    $answer .= "$friendlyname. "
+}
 
-#TODO many code to be done...
+my $powerstatus = $response_json->{'StatusSTS'}->{'POWER'};
+if ( $powerstatus ne "ON" ) {
+    $crit_count++;
+}
+$answer .= "Power status: $powerstatus. ";
+push @perfdata, sprintf("powerstate=%d", $powerstatus eq "ON" ? 1 : 0)  if  defined $powerstatus;
+
+if ( my $total = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Total'} ) {
+    push @perfdata, "total=$total";
+}
+if ( my $today = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Today'} ) {
+    push @perfdata, "today=$today";
+    $answer .= "Today $today kWh. ";
+}
+if ( my $yesterday = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Yesterday'} ) {
+    push @perfdata, "yesterday=$yesterday";
+}
+
+
+###
+
+if ( $crit_count ) {
+    $status = "Critical";
+} elsif ( $warn_count ) {
+    $status = "Warning";
+} else {
+    $status = "Ok";
+}
+
+print "$status: ";
+print "$answer\n";
+
+print "| " . join(" ", @perfdata) . "\n"  if @perfdata;
+
+exit 2 if $status eq "Critical";
+exit 1 if $status eq "Warning";
+exit 0 if $status eq "Ok";
+exit 3; # 'Unknown' return code
