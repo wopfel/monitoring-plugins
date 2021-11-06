@@ -26,6 +26,7 @@ my $crit_count = 0;
 my $warn_count = 0;
 my $status = "Unknown";
 my @perfdata = ();
+my @additional = ();
 
 
 # Process command line options
@@ -67,6 +68,9 @@ if ( my $friendlyname = $response_json->{'Status'}->{'FriendlyName'}->[0] ) {
 my $powerstatus = $response_json->{'StatusSTS'}->{'POWER'};
 if ( $powerstatus ne "ON" ) {
     $crit_count++;
+    push @additional, "[CRIT] Power status is $powerstatus";
+} else {
+    push @additional, "[OK] Power status is $powerstatus";
 }
 $answer .= "Power status: $powerstatus. ";
 push @perfdata, sprintf("powerstate=%d", $powerstatus eq "ON" ? 1 : 0)  if  defined $powerstatus;
@@ -97,6 +101,7 @@ print "$status: ";
 print "$answer\n";
 
 print "| " . join(" ", @perfdata) . "\n"  if @perfdata;
+print join("\n", @additional) . "\n"  if @additional;
 
 exit 2 if $status eq "Critical";
 exit 1 if $status eq "Warning";
