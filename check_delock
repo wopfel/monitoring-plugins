@@ -89,6 +89,12 @@ if ( defined $yesterday ) {
     push @perfdata, "yesterday=$yesterday";
 }
 
+# Get version
+my $version = $response_json->{'StatusFWR'}->{'Version'};
+if ( defined $version ) {
+    push @additional, "Version $version";
+}
+
 
 ###
 
