@@ -75,14 +75,17 @@ if ( $powerstatus ne "ON" ) {
 $answer .= "Power status: $powerstatus. ";
 push @perfdata, sprintf("powerstate=%d", $powerstatus eq "ON" ? 1 : 0)  if  defined $powerstatus;
 
-if ( my $total = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Total'} ) {
+my $total = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Total'};
+if ( defined $total ) {
     push @perfdata, "total=$total";
 }
-if ( my $today = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Today'} ) {
+my $today = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Today'};
+if ( defined $today ) {
     push @perfdata, "today=$today";
     $answer .= "Today $today kWh. ";
 }
-if ( my $yesterday = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Yesterday'} ) {
+my $yesterday = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Yesterday'};
+if ( defined $yesterday ) {
     push @perfdata, "yesterday=$yesterday";
 }
 
