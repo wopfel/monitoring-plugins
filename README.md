@@ -7,6 +7,7 @@ Some of my monitoring plugins that can be used by Icinga, for example.
 ## check_delock
 
 Checks if the power state of a Delock Tasmota adapter is on.
+I'm using this script to check a Delock model 11827.
 
 Example output having the power state on, and off:
 
