@@ -4,6 +4,49 @@ monitoring-plugins
 Some of my monitoring plugins that can be used by Icinga, for example.
 
 
+## check_delock
+
+Checks if the power state of a Delock Tasmota adapter is on.
+
+Example output having the power state on, and off:
+
+```
+Ok: Server switch. Power status: ON. Today 0.066 kWh.
+| powerstate=1 total=268.479 today=0.066 yesterday=0
+[OK] Power status is ON
+Version 12.3.1(tasmota)
+
+Critical: Server switch. Power status: OFF. Today 0.066 kWh.
+| powerstate=0 total=268.479 today=0.066 yesterday=0
+[CRIT] Power status is OFF
+Version 12.3.1(tasmota)
+```
+
+Command definition in Icinga:
+
+```
+object CheckCommand "delock" {
+  command = [ "/usr/local/bin" + "/check_delock" ]
+
+  arguments += {
+    "--hostname" = "$address$"
+  }
+}
+```
+
+Service definition in Icinga (example):
+
+```
+apply Service "status" {
+  import "generic-service"
+
+  check_command = "delock"
+
+  assign where match("delock-*", host.name)
+}
+```
+
+
 ## check_pacman
 
 This plugin detects how many packages needs to be updated. It calls `pacman -Qu` to list all packages that needs an update.
@@ -85,7 +128,7 @@ Requires root privileges (with sudo, for example).
 
 Checks the free space of a LVM logical volume. If you have a file system on an LV, you don't need this check script. You can use df based utilities for checking the file system (check_disk from the official monitoring-plugins, for example).
 
-On my proxmox host, I have an LV for hosting thin logical volumes (created with lvcreate -T ...). 
+On my proxmox host, I have an LV for hosting thin logical volumes (created with lvcreate -T ...).
 
 This plugin cares about the usage of the "master" logical volume. The thresholds are hard-coded: warning when > 80, critical when > 90 %.
 
@@ -100,5 +143,3 @@ OK: LV vg_ssd_evo/vms3. Allocated pool data 61.97 %, metadata 29.22 %. | alloc_p
 ## TODO
 
 * Make check scripts customizable using Getopt::Long
-
-
