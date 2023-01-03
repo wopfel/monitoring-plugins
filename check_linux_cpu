@@ -19,6 +19,7 @@ use Data::Dumper;
 use Getopt::Long;
 
 my $opt_verbose;
+my $opt_warn;
 #my $opt_host;
 
 my $answer = "";
@@ -32,6 +33,7 @@ my @additional = ();
 # Process command line options
 GetOptions( #"h|hostname=s"       => \$opt_host,
             "v|verbose"          => \$opt_verbose,
+	    "w|warn=s"           => \$opt_warn,
             #"help"               => \$opt_help,
           )
 or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
@@ -101,6 +103,50 @@ my $idle_pct = $idle_time / $diff_time_total * 100;
 my $iowait_pct = $iowait_time / $diff_time_total * 100;
 my $irq_pct = $irq_time / $diff_time_total * 100;
 my $softirq_pct = $softirq_time / $diff_time_total * 100;
+
+
+###
+
+for my $warn_check ( split /,/, $opt_warn ) {
+	print "Warn check: $warn_check\n"  if  $opt_verbose;
+	if ( my ( $obj, $cmp, $value ) = $warn_check =~ /^([a-z]+)(\>)(\d+)$/ ) {
+		print "$obj $cmp $value\n" if  $opt_verbose;
+		if ( $obj eq "user" and $cmp eq ">" ) {
+			if ( $user_pct > $value ) {
+				$warn_count++;
+			}
+		} elsif ( $obj eq "nice" and $cmp eq ">" ) {
+		       if ( $nice_pct > $value ) {
+				$warn_count++;
+			}
+		} elsif ( $obj eq "system" and $cmp eq ">" ) {
+		       if ( $system_pct > $value ) {
+				$warn_count++;
+			}
+		} elsif ( $obj eq "idle" and $cmp eq ">" ) {
+			print "Idle check!\n";
+		       if ( $idle_pct > $value ) {
+				$warn_count++;
+			}
+		} elsif ( $obj eq "iowait" and $cmp eq ">" ) {
+		       if ( $iowait_pct > $value ) {
+				$warn_count++;
+			}
+		} elsif ( $obj eq "irq" and $cmp eq ">" ) {
+		       if ( $irq_pct > $value ) {
+				$warn_count++;
+			}
+		} elsif ( $obj eq "softirq" and $cmp eq ">" ) {
+		       if ( $softirq_pct > $value ) {
+				$warn_count++;
+			}
+		} else {
+			die "Wrong parameter format. Try 'idle>70'";
+		}
+	} else {
+		die "Wrong parameter format. Try 'idle>70'";
+	}
+}
 
 $answer .= sprintf "CPUs %.2f %% idle, %.2f %% user, %.2f %% system. ", $idle_pct, $user_pct, $system_pct; # % idle, $user_pct % user, $system_pct % system, $iowait_pct % iowait. ";
 
