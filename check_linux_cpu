@@ -82,10 +82,12 @@ for my $iteration ( 0, 1 ) {
 my $diff_time_total = $total_time{1} - $total_time{0};
 #print $total_time{1} - $total_time{0};
 
-#print Dumper( \%diff_time );
-#die;
-#print Dumper( \%time_series );
-#die;
+if ( $opt_verbose ) {
+	print "Diff time:\n";
+	print Dumper( \%diff_time );
+	print "Time series:\n";
+	print Dumper( \%time_series );
+}
 
 
 my $user_time = $diff_time{ 'cpu' }{ 0 };
