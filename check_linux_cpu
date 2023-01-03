@@ -1,0 +1,154 @@
+#!/usr/bin/perl
+
+##################
+#
+#  Check the CPU on a Linux host
+#
+#  Usage:   ...
+#
+#  Copyright (C) 2023 Bernd Arnold
+#  https://github.com/wopfel/monitoring-plugins
+#
+##################
+
+use strict;
+use warnings;
+#require LWP::UserAgent;
+#use JSON;
+use Data::Dumper;
+use Getopt::Long;
+
+my $opt_verbose;
+#my $opt_host;
+
+my $answer = "";
+my $crit_count = 0;
+my $warn_count = 0;
+my $status = "Unknown";
+my @perfdata = ();
+my @additional = ();
+
+
+# Process command line options
+GetOptions( #"h|hostname=s"       => \$opt_host,
+            "v|verbose"          => \$opt_verbose,
+            #"help"               => \$opt_help,
+          )
+or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
+#or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 1; };
+
+
+
+my $stat_filename = "/proc/stat";
+
+my %time_series = ();
+
+for my $iteration ( 0, 1 ) {
+	open FILE, "<", $stat_filename;
+	while ( <FILE> ) {
+		if ( /^cpu/) {
+			my @values = split /\s+/;
+			my $object = shift @values;
+			push @{ $time_series{ $iteration }{ $object } }, @values;
+		}
+	}
+	close FILE;
+	# Sleep some seconds
+	sleep 3;
+}
+
+my %total_time = ();
+my %diff_time = ();
+
+for my $iteration ( 0, 1 ) {
+
+	$total_time{ $iteration } = 0;
+
+	my $element = 0;
+
+	for ( @{ $time_series{ $iteration }{ 'cpu' } } ) {
+		$total_time{ $iteration } += $_;
+
+		$diff_time{ 'cpu' }{ $element } = -$_  if  $iteration == 0;
+		$diff_time{ 'cpu' }{ $element } += $_  if  $iteration == 1;
+
+		$element++;
+	}
+}
+
+# That should be round about the sleep time times 100 (300 for 3 second sleep)
+my $diff_time_total = $total_time{1} - $total_time{0};
+#print $total_time{1} - $total_time{0};
+
+#print Dumper( \%diff_time );
+#die;
+#print Dumper( \%time_series );
+#die;
+
+
+my $user_time = $diff_time{ 'cpu' }{ 0 };
+my $nice_time = $diff_time{ 'cpu' }{ 1 };
+my $system_time  = $diff_time{ 'cpu' }{ 2 };
+my $idle_time = $diff_time{ 'cpu' }{ 3 };
+my $iowait_time = $diff_time{ 'cpu' }{ 4 };
+my $irq_time = $diff_time{ 'cpu' }{ 5 };
+my $softirq_time = $diff_time{ 'cpu' }{ 6 };
+
+my $user_pct = $user_time / $diff_time_total * 100;
+my $nice_pct = $nice_time / $diff_time_total * 100;
+my $system_pct = $system_time / $diff_time_total * 100;
+my $idle_pct = $idle_time / $diff_time_total * 100;
+my $iowait_pct = $iowait_time / $diff_time_total * 100;
+my $irq_pct = $irq_time / $diff_time_total * 100;
+my $softirq_pct = $softirq_time / $diff_time_total * 100;
+
+$answer .= sprintf "CPUs %.2f %% idle, %.2f %% user, %.2f %% system. ", $idle_pct, $user_pct, $system_pct; # % idle, $user_pct % user, $system_pct % system, $iowait_pct % iowait. ";
+
+push @perfdata, "cpu_idle=$idle_pct";
+push @perfdata, "cpu_user=$user_pct";
+push @perfdata, "cpu_nice=$nice_pct";
+push @perfdata, "cpu_system=$system_pct";
+push @perfdata, "cpu_iowait=$iowait_pct";
+push @perfdata, "cpu_irq=$irq_pct";
+push @perfdata, "cpu_softirq=$softirq_pct";
+
+###
+
+#$answer .= "Power status: $powerstatus. ";
+#push @perfdata, sprintf("powerstate=%d", $powerstatus eq "ON" ? 1 : 0)  if  defined $powerstatus;
+
+#my $total = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Total'};
+#if ( defined $total ) {
+#push @perfdata, "total=$total";
+#}
+#my $today = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Today'};
+#if ( defined $today ) {
+#push @perfdata, "today=$today";
+#$answer .= "Today $today kWh. ";
+#}
+#my $yesterday = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Yesterday'};
+#if ( defined $yesterday ) {
+#push @perfdata, "yesterday=$yesterday";
+#}
+
+
+###
+
+if ( $crit_count ) {
+    $status = "Critical";
+} elsif ( $warn_count ) {
+    $status = "Warning";
+} else {
+    $status = "Ok";
+}
+
+print "$status: ";
+print "$answer\n";
+
+print "| " . join(" ", @perfdata) . "\n"  if @perfdata;
+print join("\n", @additional) . "\n"  if @additional;
+
+exit 2 if $status eq "Critical";
+exit 1 if $status eq "Warning";
+exit 0 if $status eq "Ok";
+exit 3; # 'Unknown' return code
