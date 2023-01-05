@@ -109,7 +109,7 @@ my $softirq_pct = $softirq_time / $diff_time_total * 100;
 
 ###
 
-for my $warn_check ( split /,/, $opt_warn ) {
+for my $warn_check ( split /,/, $opt_warn // "" ) {
 	print "Warn check: $warn_check\n"  if  $opt_verbose;
 	if ( my ( $obj, $cmp, $value ) = $warn_check =~ /^([a-z]+)(\>)(\d+)$/ ) {
 		print "$obj $cmp $value\n" if  $opt_verbose;
