@@ -126,7 +126,6 @@ for my $warn_check ( split /,/, $opt_warn // "" ) {
 				$warn_count++;
 			}
 		} elsif ( $obj eq "idle" and $cmp eq ">" ) {
-			print "Idle check!\n";
 		       if ( $idle_pct > $value ) {
 				$warn_count++;
 			}
