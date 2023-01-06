@@ -4,7 +4,7 @@
 #
 #  Check the CPU on a Linux host
 #
-#  Usage:   ...
+#  Usage:   check_linux_cpu -w "idle>90,system>0"
 #
 #  Copyright (C) 2023 Bernd Arnold
 #  https://github.com/wopfel/monitoring-plugins
