@@ -80,7 +80,6 @@ for my $iteration ( 0, 1 ) {
 
 # That should be round about the sleep time times 100 (300 for 3 second sleep)
 my $diff_time_total = $total_time{1} - $total_time{0};
-#print $total_time{1} - $total_time{0};
 
 if ( $opt_verbose ) {
 	print "Diff time:\n";
@@ -158,26 +157,6 @@ push @perfdata, "cpu_system=$system_pct";
 push @perfdata, "cpu_iowait=$iowait_pct";
 push @perfdata, "cpu_irq=$irq_pct";
 push @perfdata, "cpu_softirq=$softirq_pct";
-
-###
-
-#$answer .= "Power status: $powerstatus. ";
-#push @perfdata, sprintf("powerstate=%d", $powerstatus eq "ON" ? 1 : 0)  if  defined $powerstatus;
-
-#my $total = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Total'};
-#if ( defined $total ) {
-#push @perfdata, "total=$total";
-#}
-#my $today = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Today'};
-#if ( defined $today ) {
-#push @perfdata, "today=$today";
-#$answer .= "Today $today kWh. ";
-#}
-#my $yesterday = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Yesterday'};
-#if ( defined $yesterday ) {
-#push @perfdata, "yesterday=$yesterday";
-#}
-
 
 ###
 
