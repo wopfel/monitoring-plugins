@@ -149,7 +149,7 @@ for my $warn_check ( split /,/, $opt_warn // "" ) {
 	}
 }
 
-$answer .= sprintf "CPUs %.2f %% idle, %.2f %% user, %.2f %% system. ", $idle_pct, $user_pct, $system_pct; # % idle, $user_pct % user, $system_pct % system, $iowait_pct % iowait. ";
+$answer .= sprintf "CPUs %.2f %% idle, %.2f %% user, %.2f %% system, %.2f %% iowait. ", $idle_pct, $user_pct, $system_pct, $iowait_pct;
 
 push @perfdata, "cpu_idle=$idle_pct";
 push @perfdata, "cpu_user=$user_pct";
