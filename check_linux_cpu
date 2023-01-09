@@ -9,13 +9,17 @@
 #  Copyright (C) 2023 Bernd Arnold
 #  https://github.com/wopfel/monitoring-plugins
 #
+#  Required modules:
+#  - Data::Dumper (when requesting verbose output)
+#  - Getopt::Long (for command line option parsing)
+#
 ##################
 
 use strict;
 use warnings;
 #require LWP::UserAgent;
 #use JSON;
-use Data::Dumper;
+my $require_datadumper_rc = eval { require Data::Dumper; Data::Dumper->import; 1; };
 use Getopt::Long;
 
 my $opt_verbose;
