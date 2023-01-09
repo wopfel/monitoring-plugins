@@ -46,7 +46,7 @@ my $stat_filename = "/proc/stat";
 my %time_series = ();
 
 for my $iteration ( 0, 1 ) {
-	open FILE, "<", $stat_filename;
+	open FILE, "<", $stat_filename  or  die "Error: Cannot open file '$stat_filename'.";
 	while ( <FILE> ) {
 		if ( /^cpu/) {
 			my @values = split /\s+/;
@@ -54,7 +54,7 @@ for my $iteration ( 0, 1 ) {
 			push @{ $time_series{ $iteration }{ $object } }, @values;
 		}
 	}
-	close FILE;
+	close FILE  or  die "Error: Cannot close file '$stat_filename'.";
 	# Sleep some seconds
 	sleep 3;
 }
