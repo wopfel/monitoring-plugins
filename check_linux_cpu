@@ -17,8 +17,6 @@
 
 use strict;
 use warnings;
-#require LWP::UserAgent;
-#use JSON;
 my $require_datadumper_rc = eval { require Data::Dumper; Data::Dumper->import; 1; };
 use Getopt::Long;
 
