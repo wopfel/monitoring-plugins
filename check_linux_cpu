@@ -33,7 +33,7 @@ my @additional = ();
 # Process command line options
 GetOptions( #"h|hostname=s"       => \$opt_host,
             "v|verbose"          => \$opt_verbose,
-	    "w|warn=s"           => \$opt_warn,
+            "w|warn=s"           => \$opt_warn,
             #"help"               => \$opt_help,
           )
 or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
