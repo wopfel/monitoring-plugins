@@ -20,8 +20,12 @@ use warnings;
 my $require_datadumper_rc = eval { require Data::Dumper; Data::Dumper->import; 1; };
 use Getopt::Long;
 
+# Sub routines
+sub print_help();
+
 my $opt_verbose;
 my $opt_warn;
+my $opt_help;
 #my $opt_host;
 
 my $answer = "";
@@ -36,12 +40,14 @@ my @additional = ();
 GetOptions( #"h|hostname=s"       => \$opt_host,
             "v|verbose"          => \$opt_verbose,
             "w|warn=s"           => \$opt_warn,
-            #"help"               => \$opt_help,
+            "help"               => \$opt_help,
           )
-or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
-#or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 1; };
+or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 1; };
 
-
+if ( $opt_help ) {
+	print_help();
+	exit 10;  # Outside of the official monitoring plugin's exit codes
+}
 
 my $stat_filename = "/proc/stat";
 
@@ -180,3 +186,35 @@ exit 2 if $status eq "Critical";
 exit 1 if $status eq "Warning";
 exit 0 if $status eq "Ok";
 exit 3; # 'Unknown' return code
+
+
+
+# Sub routine
+sub print_help() {
+
+	print STDERR <<~"END"
+		Check linux CPU utilization.
+
+		Usage: $0 -w WARNDEF
+
+		Example: $0 -w system>50
+		         Warns if system cpu utilization is above 50 %
+
+		Parameters:
+
+			-h, --help         Show this help text
+			-v, --verbose      Verbose output (for debugging)
+			-w, --warn DEF     Warn definition (see below)
+
+		Warn defintion:
+
+			ELEMENT>VALUE[,ELEMENT>VALUE[...]]
+
+			Gives a warning result if ELEMENT is above VALUE percent CPU utilization.
+			Multiple defintions, comma separated, are allowed.
+			Example: idle>90,system>40
+			         Gives a warning, if idle util > 90 %, or system util > 40 %, or both.
+
+	END
+
+}
