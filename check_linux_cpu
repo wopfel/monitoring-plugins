@@ -53,6 +53,7 @@ my $stat_filename = "/proc/stat";
 
 my %time_series = ();
 
+# Get the cpu values 2 times for measuring the difference
 for my $iteration ( 0, 1 ) {
 	open FILE, "<", $stat_filename  or  die "Error: Cannot open file '$stat_filename'.";
 	while ( <FILE> ) {
