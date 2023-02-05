@@ -26,7 +26,6 @@ sub print_help();
 my $opt_verbose;
 my $opt_warn;
 my $opt_help;
-#my $opt_host;
 
 my $answer = "";
 my $crit_count = 0;
@@ -37,8 +36,7 @@ my @additional = ();
 
 
 # Process command line options
-GetOptions( #"h|hostname=s"       => \$opt_host,
-            "v|verbose"          => \$opt_verbose,
+GetOptions( "v|verbose"          => \$opt_verbose,
             "w|warn=s"           => \$opt_warn,
             "help"               => \$opt_help,
           )
