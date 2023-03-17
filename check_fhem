@@ -1,0 +1,61 @@
+#!/usr/bin/perl
+
+# Checks reachability of Zigbee Ikea motion sensors.
+# Prints a warning, if at least one motion sensor is not reachable.
+#
+# Status of this script: #quickanddirty
+# There are many #TODOs for this script.
+#
+# If you want to try this script, you should check:
+# - host name of your fhem instance
+# - matching regex for your motion sensors (mine: Zigbee_IkeaMotionSensor\d*)
+#
+# Sample output:
+# Fhem: nur 4 von 5 sind reachable. Nicht reachable: Zigbee_IkeaMotionSensor2.
+#
+
+use strict;
+use warnings;
+use JSON;
+use Data::Dumper;
+
+my $token = `curl -s -D - fhem.lan:8083 | awk '/X-FHEM-csrfToken/{print \$2}'`;
+
+#print $token;
+
+chomp $token;
+
+my $json = `curl -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20Zigbee_IkeaMotionSensor\\d*&XHR=1"`;
+
+#print $json;
+
+my $response_json = decode_json( $json );
+
+#print Dumper( $response_json );
+
+my $sensor_count = 0;
+my $sensors_reachable = 0;
+my @not_reachable = ();
+
+for my $sensor ( @{ $response_json->{'Results'} } ) {
+
+    $sensor_count++;
+
+    my $name = $sensor->{'Name'};
+    my $reachable = $sensor->{'Internals'}->{'reachable'};
+    $sensors_reachable++  if  $reachable eq "1";
+    push @not_reachable, $name  if  $reachable ne "1";
+
+}
+
+if ( $sensor_count == $sensors_reachable ) {
+    print "Fhem: alle MotionSensors reachable\n";
+    exit 0;
+}
+
+print "Fhem: nur $sensors_reachable von $sensor_count sind reachable. ";
+print "Nicht reachable: ";
+print join ", ", @not_reachable;
+print ".\n";
+
+exit 1;
