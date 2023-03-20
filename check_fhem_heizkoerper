@@ -1,0 +1,112 @@
+#!/usr/bin/perl
+
+# Almost the same as check_fhem, but for Heizkoerper-Thermostate
+# TODO: merge with check_fhem
+
+#
+# Bei Fehlern:
+# Fhem: nur 4 von 5 sind reachable. Nicht reachable: Zigbee_IkeaMotionSensor2.
+#
+
+use strict;
+use warnings;
+use JSON;
+use Data::Dumper;
+
+sub check_motionsensors;
+sub check_heizkoerperthermostate;
+
+
+my $token = `curl -s -D - fhem.lan:8083 | awk '/X-FHEM-csrfToken/{print \$2}'`;
+
+#print $token;
+
+chomp $token;
+
+check_heizkoerperthermostate();
+
+
+sub check_motionsensors {
+
+my $json = `curl -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20Zigbee_IkeaMotionSensor\\d*&XHR=1"`;
+
+#print $json;
+
+my $response_json = decode_json( $json );
+
+#print Dumper( $response_json );
+
+my $sensor_count = 0;
+my $sensors_reachable = 0;
+my @not_reachable = ();
+
+for my $sensor ( @{ $response_json->{'Results'} } ) {
+
+    $sensor_count++;
+
+    my $name = $sensor->{'Name'};
+    my $reachable = $sensor->{'Internals'}->{'reachable'};
+    $sensors_reachable++  if  $reachable eq "1";
+    push @not_reachable, $name  if  $reachable ne "1";
+
+}
+
+if ( $sensor_count == $sensors_reachable ) {
+    print "Fhem: alle MotionSensors reachable\n";
+    exit 0;
+}
+
+print "Fhem: nur $sensors_reachable von $sensor_count sind reachable. ";
+print "Nicht reachable: ";
+print join ", ", @not_reachable;
+print ".\n";
+
+exit 1;
+
+}
+
+
+
+sub check_heizkoerperthermostate {
+
+
+my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?HeizkoerperThermostat.[^_]*&XHR=1"`;
+
+#print $json;
+
+my $response_json = decode_json( $json );
+
+#print Dumper( $response_json );
+
+my $sensor_count = 0;
+my $sensors_battery_ok = 0;
+my @not_battery_ok = ();
+
+for my $sensor ( @{ $response_json->{'Results'} } ) {
+
+    $sensor_count++;
+
+    #print Dumper( $sensor );
+    my $name = $sensor->{'Name'};
+    my $battery = $sensor->{'Readings'}->{'battery'}->{'Value'};
+    #print "\n\n";
+    #print $name;
+    #print $battery;
+    $sensors_battery_ok++  if  $battery eq "ok";
+    push @not_battery_ok, $name  if  $battery ne "ok";
+
+}
+
+if ( $sensor_count == $sensors_battery_ok ) {
+    print "Fhem: alle Batterien ok\n";
+    exit 0;
+}
+
+print "Fhem: nur $sensors_battery_ok von $sensor_count haben Batterie=ok. ";
+print "Nicht ok ";
+print join ", ", @not_battery_ok;
+print ".\n";
+
+exit 1;
+
+}
