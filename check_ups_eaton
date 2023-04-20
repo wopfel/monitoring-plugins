@@ -1,0 +1,129 @@
+#!/usr/bin/perl
+
+# Erstellt 19.09.2022, Bernd Arnold
+# Getestet mit einer APC USV Pro 900
+
+use strict;
+use warnings;
+
+my $perfdata = "";
+my $errorcount = 0;
+my $warningcount = 0;
+
+# # upsc eaton@localhost
+# Init SSL without certificate database
+# battery.charge: 100
+# battery.charge.low: 20
+# battery.runtime: 1892
+# battery.type: PbAc
+# device.mfr: EATON
+# device.model: Ellipse PRO 1200
+# device.serial: ***
+# device.type: ups
+# driver.name: usbhid-ups
+# driver.parameter.pollfreq: 30
+# driver.parameter.pollinterval: 2
+# driver.parameter.port: auto
+# driver.parameter.synchronous: no
+# driver.version: 2.7.4
+# driver.version.data: MGE HID 1.39
+# driver.version.internal: 0.41
+# input.frequency: 50.0
+# input.transfer.high: 285
+# input.transfer.low: 165
+# input.voltage: 225.0
+# input.voltage.extended: no
+# outlet.1.desc: PowerShare Outlet 1
+# outlet.1.id: 2
+# outlet.1.status: on
+# outlet.1.switchable: no
+# outlet.2.desc: PowerShare Outlet 2
+# outlet.2.id: 3
+# outlet.2.status: on
+# outlet.2.switchable: no
+# outlet.desc: Main Outlet
+# outlet.id: 1
+# outlet.switchable: no
+# output.frequency: 50.0
+# output.frequency.nominal: 50
+# output.voltage: 231.0
+# output.voltage.nominal: 230
+# ups.beeper.status: enabled
+# ups.delay.shutdown: 20
+# ups.delay.start: 30
+# ups.firmware: 01.16.0020
+# ups.load: 16
+# ups.mfr: EATON
+# ups.model: Ellipse PRO 1200
+# ups.power: 198
+# ups.power.nominal: 1200
+# ups.productid: ffff
+# ups.realpower: 77
+# ups.serial: ***
+# ups.status: OL
+# ups.timer.shutdown: 0
+# ups.timer.start: 0
+# ups.vendorid: 0463
+
+
+my @output = `upsc eaton\@localhost 2>&1`;
+
+my %upsdata;
+
+for my $line ( @output ) {
+
+        chomp $line;
+        next if $line =~ /Init SSL without certificate database/;
+
+        my ( $item, $value ) = $line =~ /^(.*?) *: (.*?) *$/;
+#print "<<<$item>>>\n";
+#print "<<<$line>>>";
+
+        $upsdata{ $item } = $value;
+
+}
+
+#print @output;
+#print $upsdata{'battery.charge'};
+
+
+$perfdata .= "inputvoltage=" . $upsdata{'input.voltage'} . " "  if  defined $upsdata{'input.voltage'};
+$perfdata .= "upspower=" . $upsdata{'ups.power'} . " "  if  defined $upsdata{'ups.power'};
+
+
+# battery.charge: 100
+if ( defined $upsdata{'battery.charge'} ) {
+        my $battcharge_pct = $upsdata{'battery.charge'};
+
+        $perfdata .= "battchargepct=" . $battcharge_pct . " ";
+}
+
+
+# ups.load: 16
+if ( defined $upsdata{'ups.load'} ) {
+        my $load_pct = $upsdata{'ups.load'};
+
+        $perfdata .= "loadpct=" . $load_pct . " ";
+}
+
+# ups.status: OL
+# OL On line (no power failure) (opposite of OB - on battery)
+# LB Low battery
+# RB Replace battery
+my $usvstatus = $upsdata{'ups.status'};
+
+if ( $usvstatus ne "OL" ) {
+        $errorcount++;
+}
+
+print "USV-Status $usvstatus. ";
+
+print "| $perfdata"  if  $perfdata;
+
+print "\n";
+
+
+exit 2  if  $errorcount > 0;
+exit 1  if  $warningcount > 0;
+exit 0  if  $errorcount + $warningcount == 0;
+exit 3;

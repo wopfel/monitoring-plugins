@@ -1,0 +1,143 @@
+#!/bin/perl
+
+# Erstellt 19.09.2022, Bernd Arnold
+# Getestet mit einer APC USV Pro 900
+
+use strict;
+use warnings;
+
+my $perfdata = "";
+my $errorcount = 0;
+my $warningcount = 0;
+my @addinfo = ();
+
+# # apcaccess status
+# APC      : 001,036,0872
+# DATE     : 2022-09-19 17:40:01 +0200
+# HOSTNAME : proxmox4
+# VERSION  : 3.14.14 (31 May 2016) debian
+# UPSNAME  : APC900
+# CABLE    : USB Cable
+# DRIVER   : USB UPS Driver
+# UPSMODE  : Stand Alone
+# STARTTIME: 2022-09-19 17:27:21 +0200
+# MODEL    : Back-UPS RS 900G
+# STATUS   : ONLINE NOBATT
+# LINEV    : 234.0 Volts
+# LOADPCT  : 0.0 Percent
+# BCHARGE  : 20.0 Percent
+# TIMELEFT : 177.5 Minutes
+# MBATTCHG : 5 Percent
+# MINTIMEL : 3 Minutes
+# MAXTIME  : 0 Seconds
+# SENSE    : Medium
+# LOTRANS  : 176.0 Volts
+# HITRANS  : 294.0 Volts
+# ALARMDEL : 30 Seconds
+# BATTV    : 27.1 Volts
+# LASTXFER : No transfers since turnon
+# NUMXFERS : 0
+# TONBATT  : 0 Seconds
+# CUMONBATT: 0 Seconds
+# XOFFBATT : N/A
+# SELFTEST : NO
+# STATFLAG : 0x01000008
+# SERIALNO : ***
+# BATTDATE : 2016-04-08
+# NOMINV   : 230 Volts
+# NOMBATTV : 24.0 Volts
+# NOMPOWER : 540 Watts
+# FIRMWARE : 879.L4 .I USB FW:L4
+# END APC  : 2022-09-19 17:40:03 +0200
+
+my @output = `apcaccess status`;
+
+my %upsdata;
+
+for my $line ( @output ) {
+
+	chomp $line;
+
+	my ( $item, $value ) = $line =~ /^(.*?) *: (.*?) *$/;
+#print "<<<$item>>>\n";
+#print "<<<$line>>>";
+
+	$upsdata{ $item } = $value;
+
+}
+
+#print @output;
+#print $upsdata{'LOADPCT'};
+
+
+# LOADPCT  : 0.0 Percent
+if ( defined $upsdata{'LOADPCT'} ) {
+	my $load_pct = $upsdata{'LOADPCT'};
+	$load_pct =~ s/ Perc.*//;
+
+	$perfdata .= "loadpct=" . $load_pct . " ";
+}
+
+
+# BCHARGE  : 20.0 Percent
+if ( defined $upsdata{'BCHARGE'} ) {
+	my $battcharge_pct = $upsdata{'BCHARGE'};
+	$battcharge_pct =~ s/ Perc.*//;
+
+	if ( $battcharge_pct < 40 ) {
+		$errorcount++;
+		push @addinfo, "[CRITICAL] less than 40 % charged";
+	} elsif ( $battcharge_pct < 80 ) {
+		$warningcount++;
+		push @addinfo, "[WARNING] less than 80 % charged";
+	}
+	$perfdata .= "battchargepct=" . $battcharge_pct . " ";
+}
+
+
+# TIMELEFT : 177.5 Minutes
+if ( defined $upsdata{'TIMELEFT'} ) {
+	my $timeleftminutes = $upsdata{'TIMELEFT'};
+	if ( $timeleftminutes =~ / Minutes$/ ) {
+	    	$timeleftminutes =~ s/ Minutes//;
+    		$perfdata .= "timeleftminutes=" . $timeleftminutes . " ";
+	} else {
+    		print "Cannot parse TIMELEFT.";
+    		$warningcount++;
+	}
+}
+
+
+# STATUS   : ONLINE NOBATT
+# STATUS   : COMMLOST
+my $usvstatus = $upsdata{'STATUS'};
+
+if ( $usvstatus ne "ONLINE" ) {
+	$errorcount++;
+	push @addinfo, "UPS not online";
+}
+
+my $statustext;
+$statustext = "Communication to UPS lost"  if  $usvstatus eq "COMMLOST";
+$statustext = "On battery"  if  $usvstatus eq "ONBATT";
+$statustext = "Off"  if  $usvstatus eq "";
+
+if ( $statustext ) {
+	print "USV-Status: $statustext ($usvstatus). ";
+} else {
+	print "USV-Status: $usvstatus. ";
+}
+
+print $upsdata{'BCHARGE'} . " charged. ";
+
+print "| $perfdata"  if  $perfdata;
+
+print "\n";
+
+print join ("\n", @addinfo) . "\n"  if  @addinfo;
+
+
+exit 2  if  $errorcount > 0;
+exit 1  if  $warningcount > 0;
+exit 0  if  $errorcount + $warningcount == 0;
+exit 3;
