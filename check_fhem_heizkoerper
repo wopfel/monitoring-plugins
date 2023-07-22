@@ -4,7 +4,7 @@
 # TODO: merge with check_fhem
 
 #
-# Bei Fehlern:
+# Bei Fehlern: 
 # Fhem: nur 4 von 5 sind reachable. Nicht reachable: Zigbee_IkeaMotionSensor2.
 #
 
