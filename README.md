@@ -171,9 +171,9 @@ Fhem: alle Batterien ok
 
 Sorry for the misleading item options. `bewegungsmelder` checks the battery state of Homematic motion sensors, whereas `motionsensors` checks the Zigbee Ikea motion sensors.
 
-#TODO: Host name as parameter
-#TODO: regex as parameter
-#TODO: battery/reachable as parameter
+#TODO: Host name as parameter  
+#TODO: regex as parameter  
+#TODO: battery/reachable as parameter  
 
 
 ## TODO
