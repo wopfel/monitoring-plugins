@@ -194,13 +194,12 @@ my $response_json = decode_json( $json );
 
 #print Dumper( $response_json );
 
-my $sensor_count = 0;
-my $sensors_battery_ok = 0;
-my @not_battery_ok = ();
+my $device_count = 0;
+my $device_ok = 0;
 
 for my $sensor ( @{ $response_json->{'Results'} } ) {
 
-    $sensor_count++;
+    $device_count++;
 
     #print Dumper( $sensor );
     my $name = $sensor->{'Name'};
@@ -208,22 +207,22 @@ for my $sensor ( @{ $response_json->{'Results'} } ) {
     #print "\n\n";
     #print $name;
     #print $battery;
-    $sensors_battery_ok++  if  $battery eq "ok";
-    push @not_battery_ok, $name  if  $battery ne "ok";
 
+    if ( $battery eq "ok" ) {
+        $device_ok++;
+	push @additional, "[OK] Device '$name'";
+    } else {
+	$warn_count++;
+	push @additional, "[WARNING] Device '$name'";
+    }
 }
 
-if ( $sensor_count == $sensors_battery_ok ) {
-    print "Fhem: alle Batterien ok\n";
-    exit 0;
+if ( $device_count == $device_ok ) {
+    $answer .= "Alle Fhem-Devices ok. ";
+} else {
+    $warn_count++;
+    $answer .= "nur $device_ok von $device_count haben Batterie=ok. ";
 }
-
-print "Fhem: nur $sensors_battery_ok von $sensor_count haben Batterie=ok. ";
-print "Nicht ok ";
-print join ", ", @not_battery_ok;
-print ".\n";
-
-exit 1;
 
 }
 
