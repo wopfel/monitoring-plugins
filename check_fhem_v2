@@ -105,32 +105,31 @@ my $response_json = decode_json( $json );
 
 #print Dumper( $response_json );
 
-my $sensor_count = 0;
-my $sensors_reachable = 0;
-my @not_reachable = ();
+my $device_count = 0;
+my $device_ok = 0;
 
 for my $sensor ( @{ $response_json->{'Results'} } ) {
 
-    $sensor_count++;
+    $device_count++;
 
     my $name = $sensor->{'Name'};
     my $reachable = $sensor->{'Internals'}->{'reachable'};
-    $sensors_reachable++  if  $reachable eq "1";
-    push @not_reachable, $name  if  $reachable ne "1";
 
+    if ( $reachable eq "1" ) {
+        $device_ok++;
+	push @additional, "[OK] Device '$name'";
+    } else {
+	$warn_count++;
+	push @additional, "[WARNING] Device '$name'";
+    }
 }
 
-if ( $sensor_count == $sensors_reachable ) {
-    print "Fhem: alle MotionSensors reachable\n";
-    exit 0;
+if ( $device_count == $device_ok ) {
+    $answer .= "Alle Fhem-Devices reachable. ";
+} else {
+    $warn_count++;
+    $answer .= "nur $device_ok von $device_count sind reachable. ";
 }
-
-print "Fhem: nur $sensors_reachable von $sensor_count sind reachable. ";
-print "Nicht reachable: ";
-print join ", ", @not_reachable;
-print ".\n";
-
-exit 1;
 
 }
 
