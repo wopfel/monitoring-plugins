@@ -55,6 +55,8 @@ if ( $opt_item eq "heizkoerperthermostate" ) {
     check_motionsensors();
 } elsif ( $opt_item eq "bewegungsmelder" ) {
     check_bewegungsmelder();
+} elsif ( $opt_item eq "mqttclient" ) {
+    check_mqttclient();
 } else {
     print STDERR "Error: invalid option --item given.\n";
     exit 4;
@@ -194,3 +196,55 @@ exit 1;
 
 }
 
+
+
+
+
+#
+# Check if the state of MQTTClient is "opened"
+#
+
+sub check_mqttclient {
+
+
+my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20MQTT2Client&XHR=1"`;
+
+#print $json;
+
+my $response_json = decode_json( $json );
+
+#print Dumper( $response_json );
+
+my $device_count = 0;
+my $device_ok = 0;
+my @device_not_ok = ();
+my @additional_info = ();
+
+for my $device ( @{ $response_json->{'Results'} } ) {
+
+    $device_count++;
+
+    #print Dumper( $device );
+    my $name = $device->{'Name'};
+    my $state_value = $device->{'Readings'}->{'state'}->{'Value'};
+    #print "\n\n";
+    #print $name;
+    #print $state_value;
+    $device_ok++  if  $state_value eq "opened";
+    push @device_not_ok, $name  if  $state_value ne "opened";
+
+}
+
+if ( $device_count == $device_ok ) {
+    print "Fhem: alle Devices ok\n";
+    exit 0;
+}
+
+print "Fhem: nur $device_ok von $device_count haben state=opened. ";
+print "Nicht ok ";
+print join ", ", @device_not_ok;
+print ".\n";
+
+exit 1;
+
+}
