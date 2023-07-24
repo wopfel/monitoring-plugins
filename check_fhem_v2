@@ -230,19 +230,29 @@ for my $device ( @{ $response_json->{'Results'} } ) {
     #print "\n\n";
     #print $name;
     #print $state_value;
-    $device_ok++  if  $state_value eq "opened";
-    push @device_not_ok, $name  if  $state_value ne "opened";
+
+    if ( $state_value eq "opened" ) {
+        $device_ok++;
+	push @additional_info, "[OK] Device '$name'";
+    } else {
+        push @device_not_ok, $name;
+	push @additional_info, "[WARNING] Device '$name'";
+    }
 
 }
 
 if ( $device_count == $device_ok ) {
     print "Fhem: alle Devices ok\n";
+    print join "\n", @additional_info;
+    print ".\n";
     exit 0;
 }
 
 print "Fhem: nur $device_ok von $device_count haben state=opened. ";
 print "Nicht ok ";
 print join ", ", @device_not_ok;
+print ".\n";
+print join "\n", @additional_info;
 print ".\n";
 
 exit 1;
