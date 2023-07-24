@@ -24,6 +24,13 @@ use Getopt::Long;
 
 my $opt_item;
 
+my $answer = "";
+my $crit_count = 0;
+my $warn_count = 0;
+my $status = "Unknown";
+my @perfdata = ();
+my @additional = ();
+
 sub check_motionsensors;
 sub check_heizkoerperthermostate;
 
@@ -61,6 +68,30 @@ if ( $opt_item eq "heizkoerperthermostate" ) {
     print STDERR "Error: invalid option --item given.\n";
     exit 4;
 }
+
+
+#
+# Build output
+#
+
+if ( $crit_count ) {
+    $status = "Critical";
+} elsif ( $warn_count ) {
+    $status = "Warning";
+} else {
+    $status = "Ok";
+}
+
+print "$status: ";
+print "$answer\n";
+
+print "| " . join(" ", @perfdata) . "\n"  if @perfdata;
+print join("\n", @additional) . "\n"  if @additional;
+
+exit 2 if $status eq "Critical";
+exit 1 if $status eq "Warning";
+exit 0 if $status eq "Ok";
+exit 3; # 'Unknown' return code
 
 
 
@@ -217,8 +248,6 @@ my $response_json = decode_json( $json );
 
 my $device_count = 0;
 my $device_ok = 0;
-my @device_not_ok = ();
-my @additional_info = ();
 
 for my $device ( @{ $response_json->{'Results'} } ) {
 
@@ -233,28 +262,19 @@ for my $device ( @{ $response_json->{'Results'} } ) {
 
     if ( $state_value eq "opened" ) {
         $device_ok++;
-	push @additional_info, "[OK] Device '$name'";
+	push @additional, "[OK] Device '$name'";
     } else {
-        push @device_not_ok, $name;
-	push @additional_info, "[WARNING] Device '$name'";
+	$warn_count++;
+	push @additional, "[WARNING] Device '$name'";
     }
 
 }
 
 if ( $device_count == $device_ok ) {
-    print "Fhem: alle Devices ok\n";
-    print join "\n", @additional_info;
-    print ".\n";
-    exit 0;
+    $answer .= "Alle Fhem-Devices ok. ";
+} else {
+    $warn_count++;
+    $answer .= "nur $device_ok von $device_count haben state=opened. ";
 }
-
-print "Fhem: nur $device_ok von $device_count haben state=opened. ";
-print "Nicht ok ";
-print join ", ", @device_not_ok;
-print ".\n";
-print join "\n", @additional_info;
-print ".\n";
-
-exit 1;
 
 }
