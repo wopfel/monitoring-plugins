@@ -97,6 +97,10 @@ exit 3; # 'Unknown' return code
 
 
 
+#
+# Check Ikea motion sensor's reachability
+#
+
 sub check_motionsensors {
 
     my $json = `curl -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20Zigbee_IkeaMotionSensor\\d*&XHR=1"`;
@@ -138,8 +142,11 @@ sub check_motionsensors {
 
 
 
-sub check_heizkoerperthermostate {
+#
+# Check battery state of Homematic Heizkoerperthermostate HM-CC-RT-DN
+#
 
+sub check_heizkoerperthermostate {
 
     my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?HeizkoerperThermostat.[^_]*&XHR=1"`;
 
@@ -183,8 +190,11 @@ sub check_heizkoerperthermostate {
 
 
 
-sub check_bewegungsmelder {
+#
+# Check battery state of Homematic motion sensor HM-SEN-MDIR-O-2
+#
 
+sub check_bewegungsmelder {
 
     my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?BewegMelder.*:FILTER=TYPE=CUL_HM&XHR=1"`;
 
@@ -234,7 +244,6 @@ sub check_bewegungsmelder {
 #
 
 sub check_mqttclient {
-
 
     my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20MQTT2Client&XHR=1"`;
 
