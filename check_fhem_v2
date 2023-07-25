@@ -23,6 +23,7 @@ use Data::Dumper;
 use Getopt::Long;
 
 my $opt_item;
+my $opt_verbose;
 
 my $answer = "";
 my $crit_count = 0;
@@ -37,8 +38,9 @@ sub check_heizkoerperthermostate;
 
 # Process command line options
 GetOptions( "i|item=s"       => \$opt_item,
-          )
-or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
+            "v|verbose"      => \$opt_verbose,
+)
+    or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
 
 
 if ( ! $opt_item ) {
@@ -51,7 +53,7 @@ if ( ! $opt_item ) {
 # Get CSRF token
 my $token = `curl -s -D - fhem.lan:8083 | awk '/X-FHEM-csrfToken/{print \$2}'`;
 
-#print $token;
+print Dumper( $token )  if  $opt_verbose;
 
 chomp $token;
 
@@ -99,11 +101,11 @@ sub check_motionsensors {
 
     my $json = `curl -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20Zigbee_IkeaMotionSensor\\d*&XHR=1"`;
 
-    #print $json;
+    print Dumper( $json )  if  $opt_verbose;
 
     my $response_json = decode_json( $json );
 
-    #print Dumper( $response_json );
+    print Dumper( $response_json )  if  $opt_verbose;
 
     my $device_count = 0;
     my $device_ok = 0;
@@ -141,11 +143,11 @@ sub check_heizkoerperthermostate {
 
     my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?HeizkoerperThermostat.[^_]*&XHR=1"`;
 
-    #print $json;
+    print Dumper( $json )  if  $opt_verbose;
 
     my $response_json = decode_json( $json );
 
-    #print Dumper( $response_json );
+    print Dumper( $response_json )  if  $opt_verbose;
 
     my $device_count = 0;
     my $device_ok = 0;
@@ -154,12 +156,10 @@ sub check_heizkoerperthermostate {
 
         $device_count++;
 
-        #print Dumper( $sensor );
+        print Dumper( $sensor )  if  $opt_verbose;
         my $name = $sensor->{'Name'};
         my $battery = $sensor->{'Readings'}->{'battery'}->{'Value'};
-        #print "\n\n";
-        #print $name;
-        #print $battery;
+        print "# Name=$name, Battery=$battery.\n"  if  $opt_verbose;
 
         if ( $battery eq "ok" ) {
             $device_ok++;
@@ -188,11 +188,11 @@ sub check_bewegungsmelder {
 
     my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?BewegMelder.*:FILTER=TYPE=CUL_HM&XHR=1"`;
 
-    #print $json;
+    print Dumper( $json )  if  $opt_verbose;
 
     my $response_json = decode_json( $json );
 
-    #print Dumper( $response_json );
+    print Dumper( $response_json )  if  $opt_verbose;
 
     my $device_count = 0;
     my $device_ok = 0;
@@ -201,12 +201,10 @@ sub check_bewegungsmelder {
 
         $device_count++;
 
-        #print Dumper( $sensor );
+        print Dumper( $sensor )  if  $opt_verbose;
         my $name = $sensor->{'Name'};
         my $battery = $sensor->{'Readings'}->{'battery'}->{'Value'};
-        #print "\n\n";
-        #print $name;
-        #print $battery;
+        print "# Name=$name, Battery=$battery.\n"  if  $opt_verbose;
 
         if ( $battery eq "ok" ) {
             $device_ok++;
@@ -240,11 +238,11 @@ sub check_mqttclient {
 
     my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20MQTT2Client&XHR=1"`;
 
-    #print $json;
+    print Dumper( $json )  if  $opt_verbose;
 
     my $response_json = decode_json( $json );
 
-    #print Dumper( $response_json );
+    print Dumper( $response_json )  if  $opt_verbose;
 
     my $device_count = 0;
     my $device_ok = 0;
@@ -253,12 +251,10 @@ sub check_mqttclient {
 
         $device_count++;
 
-        #print Dumper( $device );
+        print Dumper( $device )  if  $opt_verbose;
         my $name = $device->{'Name'};
         my $state_value = $device->{'Readings'}->{'state'}->{'Value'};
-        #print "\n\n";
-        #print $name;
-        #print $state_value;
+        print "# Name=$name, StateValue=$state_value.\n"  if  $opt_verbose;
 
         if ( $state_value eq "opened" ) {
             $device_ok++;
