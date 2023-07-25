@@ -18,6 +18,7 @@
 
 use strict;
 use warnings;
+use LWP::UserAgent;
 use JSON;
 use Data::Dumper;
 use Getopt::Long;
@@ -51,11 +52,18 @@ if ( ! $opt_item ) {
 
 
 # Get CSRF token
-my $token = `curl -s -D - fhem.lan:8083 | awk '/X-FHEM-csrfToken/{print \$2}'`;
+my $ua = LWP::UserAgent->new;
+my $response = $ua->get( "http://fhem.lan:8083/" );
+my $token = $response->header('X-FHEM-csrfToken');
+
+unless ( $response->is_success ) {
+    print "UNKNOWN: $response->status_line";
+    exit 3;
+}
+
+print $response->decoded_content if $opt_verbose;
 
 print Dumper( $token )  if  $opt_verbose;
-
-chomp $token;
 
 
 if ( $opt_item eq "heizkoerperthermostate" ) {
