@@ -196,7 +196,7 @@ sub check_heizkoerperthermostate {
 
 sub check_bewegungsmelder {
 
-    my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?BewegMelder.*:FILTER=TYPE=CUL_HM&XHR=1"`;
+    my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?BewegMelder.*:FILTER=model=HM-SEN-MDIR-O-2&XHR=1"`;
 
     print Dumper( $json )  if  $opt_verbose;
 
