@@ -97,39 +97,40 @@ exit 3; # 'Unknown' return code
 
 sub check_motionsensors {
 
-my $json = `curl -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20Zigbee_IkeaMotionSensor\\d*&XHR=1"`;
+    my $json = `curl -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20Zigbee_IkeaMotionSensor\\d*&XHR=1"`;
 
-#print $json;
+    #print $json;
 
-my $response_json = decode_json( $json );
+    my $response_json = decode_json( $json );
 
-#print Dumper( $response_json );
+    #print Dumper( $response_json );
 
-my $device_count = 0;
-my $device_ok = 0;
+    my $device_count = 0;
+    my $device_ok = 0;
 
-for my $sensor ( @{ $response_json->{'Results'} } ) {
+    for my $sensor ( @{ $response_json->{'Results'} } ) {
 
-    $device_count++;
+        $device_count++;
 
-    my $name = $sensor->{'Name'};
-    my $reachable = $sensor->{'Internals'}->{'reachable'};
+        my $name = $sensor->{'Name'};
+        my $reachable = $sensor->{'Internals'}->{'reachable'};
 
-    if ( $reachable eq "1" ) {
-        $device_ok++;
-	push @additional, "[OK] Device '$name'";
-    } else {
-	$warn_count++;
-	push @additional, "[WARNING] Device '$name'";
+        if ( $reachable eq "1" ) {
+            $device_ok++;
+            push @additional, "[OK] Device '$name'";
+        } else {
+            $warn_count++;
+            push @additional, "[WARNING] Device '$name'";
+        }
+
     }
-}
 
-if ( $device_count == $device_ok ) {
-    $answer .= "Alle Fhem-Devices reachable. ";
-} else {
-    $warn_count++;
-    $answer .= "nur $device_ok von $device_count sind reachable. ";
-}
+    if ( $device_count == $device_ok ) {
+        $answer .= "Alle Fhem-Devices reachable. ";
+    } else {
+        $warn_count++;
+        $answer .= "nur $device_ok von $device_count sind reachable. ";
+    }
 
 }
 
@@ -138,43 +139,44 @@ if ( $device_count == $device_ok ) {
 sub check_heizkoerperthermostate {
 
 
-my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?HeizkoerperThermostat.[^_]*&XHR=1"`;
+    my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?HeizkoerperThermostat.[^_]*&XHR=1"`;
 
-#print $json;
+    #print $json;
 
-my $response_json = decode_json( $json );
+    my $response_json = decode_json( $json );
 
-#print Dumper( $response_json );
+    #print Dumper( $response_json );
 
-my $device_count = 0;
-my $device_ok = 0;
+    my $device_count = 0;
+    my $device_ok = 0;
 
-for my $sensor ( @{ $response_json->{'Results'} } ) {
+    for my $sensor ( @{ $response_json->{'Results'} } ) {
 
-    $device_count++;
+        $device_count++;
 
-    #print Dumper( $sensor );
-    my $name = $sensor->{'Name'};
-    my $battery = $sensor->{'Readings'}->{'battery'}->{'Value'};
-    #print "\n\n";
-    #print $name;
-    #print $battery;
+        #print Dumper( $sensor );
+        my $name = $sensor->{'Name'};
+        my $battery = $sensor->{'Readings'}->{'battery'}->{'Value'};
+        #print "\n\n";
+        #print $name;
+        #print $battery;
 
-    if ( $battery eq "ok" ) {
-        $device_ok++;
-	push @additional, "[OK] Device '$name'";
-    } else {
-	$warn_count++;
-	push @additional, "[WARNING] Device '$name'";
+        if ( $battery eq "ok" ) {
+            $device_ok++;
+            push @additional, "[OK] Device '$name'";
+        } else {
+            $warn_count++;
+            push @additional, "[WARNING] Device '$name'";
+        }
+
     }
-}
 
-if ( $device_count == $device_ok ) {
-    $answer .= "Alle Fhem-Devices ok. ";
-} else {
-    $warn_count++;
-    $answer .= "nur $device_ok von $device_count haben Batterie=ok. ";
-}
+    if ( $device_count == $device_ok ) {
+        $answer .= "Alle Fhem-Devices ok. ";
+    } else {
+        $warn_count++;
+        $answer .= "nur $device_ok von $device_count haben Batterie=ok. ";
+    }
 
 }
 
@@ -184,43 +186,44 @@ if ( $device_count == $device_ok ) {
 sub check_bewegungsmelder {
 
 
-my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?BewegMelder.*:FILTER=TYPE=CUL_HM&XHR=1"`;
+    my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?BewegMelder.*:FILTER=TYPE=CUL_HM&XHR=1"`;
 
-#print $json;
+    #print $json;
 
-my $response_json = decode_json( $json );
+    my $response_json = decode_json( $json );
 
-#print Dumper( $response_json );
+    #print Dumper( $response_json );
 
-my $device_count = 0;
-my $device_ok = 0;
+    my $device_count = 0;
+    my $device_ok = 0;
 
-for my $sensor ( @{ $response_json->{'Results'} } ) {
+    for my $sensor ( @{ $response_json->{'Results'} } ) {
 
-    $device_count++;
+        $device_count++;
 
-    #print Dumper( $sensor );
-    my $name = $sensor->{'Name'};
-    my $battery = $sensor->{'Readings'}->{'battery'}->{'Value'};
-    #print "\n\n";
-    #print $name;
-    #print $battery;
+        #print Dumper( $sensor );
+        my $name = $sensor->{'Name'};
+        my $battery = $sensor->{'Readings'}->{'battery'}->{'Value'};
+        #print "\n\n";
+        #print $name;
+        #print $battery;
 
-    if ( $battery eq "ok" ) {
-        $device_ok++;
-	push @additional, "[OK] Device '$name'";
-    } else {
-	$warn_count++;
-	push @additional, "[WARNING] Device '$name'";
+        if ( $battery eq "ok" ) {
+            $device_ok++;
+            push @additional, "[OK] Device '$name'";
+        } else {
+            $warn_count++;
+            push @additional, "[WARNING] Device '$name'";
+        }
+
     }
-}
 
-if ( $device_count == $device_ok ) {
-    $answer .= "Alle Fhem-Devices ok. ";
-} else {
-    $warn_count++;
-    $answer .= "nur $device_ok von $device_count haben Batterie=ok. ";
-}
+    if ( $device_count == $device_ok ) {
+        $answer .= "Alle Fhem-Devices ok. ";
+    } else {
+        $warn_count++;
+        $answer .= "nur $device_ok von $device_count haben Batterie=ok. ";
+    }
 
 }
 
@@ -235,43 +238,43 @@ if ( $device_count == $device_ok ) {
 sub check_mqttclient {
 
 
-my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20MQTT2Client&XHR=1"`;
+    my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20MQTT2Client&XHR=1"`;
 
-#print $json;
+    #print $json;
 
-my $response_json = decode_json( $json );
+    my $response_json = decode_json( $json );
 
-#print Dumper( $response_json );
+    #print Dumper( $response_json );
 
-my $device_count = 0;
-my $device_ok = 0;
+    my $device_count = 0;
+    my $device_ok = 0;
 
-for my $device ( @{ $response_json->{'Results'} } ) {
+    for my $device ( @{ $response_json->{'Results'} } ) {
 
-    $device_count++;
+        $device_count++;
 
-    #print Dumper( $device );
-    my $name = $device->{'Name'};
-    my $state_value = $device->{'Readings'}->{'state'}->{'Value'};
-    #print "\n\n";
-    #print $name;
-    #print $state_value;
+        #print Dumper( $device );
+        my $name = $device->{'Name'};
+        my $state_value = $device->{'Readings'}->{'state'}->{'Value'};
+        #print "\n\n";
+        #print $name;
+        #print $state_value;
 
-    if ( $state_value eq "opened" ) {
-        $device_ok++;
-	push @additional, "[OK] Device '$name'";
-    } else {
-	$warn_count++;
-	push @additional, "[WARNING] Device '$name'";
+        if ( $state_value eq "opened" ) {
+            $device_ok++;
+            push @additional, "[OK] Device '$name'";
+        } else {
+            $warn_count++;
+            push @additional, "[WARNING] Device '$name'";
+        }
+
     }
 
-}
-
-if ( $device_count == $device_ok ) {
-    $answer .= "Alle Fhem-Devices ok. ";
-} else {
-    $warn_count++;
-    $answer .= "nur $device_ok von $device_count haben state=opened. ";
-}
+    if ( $device_count == $device_ok ) {
+        $answer .= "Alle Fhem-Devices ok. ";
+    } else {
+        $warn_count++;
+        $answer .= "nur $device_ok von $device_count haben state=opened. ";
+    }
 
 }
