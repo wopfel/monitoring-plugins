@@ -111,7 +111,10 @@ exit 3; # 'Unknown' return code
 
 sub check_motionsensors {
 
-    my $json = `curl -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20Zigbee_IkeaMotionSensor\\d*&XHR=1"`;
+    $ua = LWP::UserAgent->new;
+    my $url = "http://fhem.lan:8083/fhem?cmd=jsonlist2%20Zigbee_IkeaMotionSensor\\d*&XHR=1";
+    $response = $ua->post( $url, [ 'fwcsrf' => $token ] );
+    my $json = $response->decoded_content;
 
     print Dumper( $json )  if  $opt_verbose;
 
@@ -156,7 +159,10 @@ sub check_motionsensors {
 
 sub check_heizkoerperthermostate {
 
-    my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?HeizkoerperThermostat.[^_]*&XHR=1"`;
+    $ua = LWP::UserAgent->new;
+    my $url = "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?HeizkoerperThermostat.[^_]*&XHR=1";
+    $response = $ua->post( $url, [ 'fwcsrf' => $token ] );
+    my $json = $response->decoded_content;
 
     print Dumper( $json )  if  $opt_verbose;
 
@@ -204,7 +210,10 @@ sub check_heizkoerperthermostate {
 
 sub check_bewegungsmelder {
 
-    my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?BewegMelder.*:FILTER=model=HM-SEN-MDIR-O-2&XHR=1"`;
+    $ua = LWP::UserAgent->new;
+    my $url = "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?BewegMelder.*:FILTER=model=HM-SEN-MDIR-O-2&XHR=1";
+    $response = $ua->post( $url, [ 'fwcsrf' => $token ] );
+    my $json = $response->decoded_content;
 
     print Dumper( $json )  if  $opt_verbose;
 
@@ -253,7 +262,10 @@ sub check_bewegungsmelder {
 
 sub check_mqttclient {
 
-    my $json = `curl -g -s --data "fwcsrf=$token" "http://fhem.lan:8083/fhem?cmd=jsonlist2%20MQTT2Client&XHR=1"`;
+    $ua = LWP::UserAgent->new;
+    my $url = "http://fhem.lan:8083/fhem?cmd=jsonlist2%20MQTT2Client&XHR=1";
+    $response = $ua->post( $url, [ 'fwcsrf' => $token ] );
+    my $json = $response->decoded_content;
 
     print Dumper( $json )  if  $opt_verbose;
 
