@@ -152,26 +152,23 @@ Checks Zigbee Ikea motion sensors for reachability, Homematic Heizkoerper for ba
 
 If you want to try this script, please adjust the script according to your environment, especially:
 
-- host name of your Fhem instance (mine is `fhem.lan`), as the host name is hard coded.
-
 - the regex to match the desired object names in Fhem.
 
 Example usage:
 
 ```
-# /usr/local/bin/check_fhem_v2 --item bewegungsmelder
+# /usr/local/bin/check_fhem_v2 --host fhem.lan --item bewegungsmelder
 Fhem: alle Batterien ok
 
-# /usr/local/bin/check_fhem_v2 --item motionsensors
+# /usr/local/bin/check_fhem_v2 --host fhem.lan --item motionsensors
 Fhem: alle MotionSensors reachable
 
-# /usr/local/bin/check_fhem_v2 --item heizkoerperthermostate
+# /usr/local/bin/check_fhem_v2 --host fhem.lan --item heizkoerperthermostate
 Fhem: alle Batterien ok
 ```
 
 Sorry for the misleading item options. `bewegungsmelder` checks the battery state of Homematic motion sensors, whereas `motionsensors` checks the Zigbee Ikea motion sensors.
 
-#TODO: Host name as parameter  
 #TODO: regex as parameter  
 #TODO: battery/reachable as parameter  
 

@@ -23,6 +23,7 @@ use JSON;
 use Data::Dumper;
 use Getopt::Long;
 
+my $opt_host;
 my $opt_item;
 my $opt_verbose;
 
@@ -38,11 +39,17 @@ sub check_heizkoerperthermostate;
 
 
 # Process command line options
-GetOptions( "i|item=s"       => \$opt_item,
+GetOptions( "h|hostname=s"   => \$opt_host,
+            "i|item=s"       => \$opt_item,
             "v|verbose"      => \$opt_verbose,
 )
     or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
 
+
+if ( ! $opt_host ) {
+    print STDERR "Error: option --host missing.\n";
+    exit 4;
+}
 
 if ( ! $opt_item ) {
     print STDERR "Error: option --item missing.\n";
@@ -53,7 +60,7 @@ if ( ! $opt_item ) {
 
 # Get CSRF token
 my $ua = LWP::UserAgent->new;
-my $response = $ua->get( "http://fhem.lan:8083/" );
+my $response = $ua->get( "http://$opt_host:8083/" );
 my $token = $response->header('X-FHEM-csrfToken');
 
 unless ( $response->is_success ) {
@@ -112,7 +119,7 @@ exit 3; # 'Unknown' return code
 sub check_motionsensors {
 
     $ua = LWP::UserAgent->new;
-    my $url = "http://fhem.lan:8083/fhem?cmd=jsonlist2%20Zigbee_IkeaMotionSensor\\d*&XHR=1";
+    my $url = "http://$opt_host:8083/fhem?cmd=jsonlist2%20Zigbee_IkeaMotionSensor\\d*&XHR=1";
     $response = $ua->post( $url, [ 'fwcsrf' => $token ] );
     my $json = $response->decoded_content;
 
@@ -160,7 +167,7 @@ sub check_motionsensors {
 sub check_heizkoerperthermostate {
 
     $ua = LWP::UserAgent->new;
-    my $url = "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?HeizkoerperThermostat.[^_]*&XHR=1";
+    my $url = "http://$opt_host:8083/fhem?cmd=jsonlist2%20(HM_)?HeizkoerperThermostat.[^_]*&XHR=1";
     $response = $ua->post( $url, [ 'fwcsrf' => $token ] );
     my $json = $response->decoded_content;
 
@@ -211,7 +218,7 @@ sub check_heizkoerperthermostate {
 sub check_bewegungsmelder {
 
     $ua = LWP::UserAgent->new;
-    my $url = "http://fhem.lan:8083/fhem?cmd=jsonlist2%20(HM_)?BewegMelder.*:FILTER=model=HM-SEN-MDIR-O-2&XHR=1";
+    my $url = "http://$opt_host:8083/fhem?cmd=jsonlist2%20(HM_)?BewegMelder.*:FILTER=model=HM-SEN-MDIR-O-2&XHR=1";
     $response = $ua->post( $url, [ 'fwcsrf' => $token ] );
     my $json = $response->decoded_content;
 
@@ -263,7 +270,7 @@ sub check_bewegungsmelder {
 sub check_mqttclient {
 
     $ua = LWP::UserAgent->new;
-    my $url = "http://fhem.lan:8083/fhem?cmd=jsonlist2%20MQTT2Client&XHR=1";
+    my $url = "http://$opt_host:8083/fhem?cmd=jsonlist2%20MQTT2Client&XHR=1";
     $response = $ua->post( $url, [ 'fwcsrf' => $token ] );
     my $json = $response->decoded_content;
 
