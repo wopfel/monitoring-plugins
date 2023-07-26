@@ -39,12 +39,12 @@ my @additional = ();
 GetOptions( "v|verbose"          => \$opt_verbose,
             "w|warn=s"           => \$opt_warn,
             "help"               => \$opt_help,
-          )
-or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 1; };
+)
+    or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 1; };
 
 if ( $opt_help ) {
-	print_help();
-	exit 10;  # Outside of the official monitoring plugin's exit codes
+    print_help();
+    exit 10;  # Outside of the official monitoring plugin's exit codes
 }
 
 my $stat_filename = "/proc/stat";
@@ -53,17 +53,17 @@ my %time_series = ();
 
 # Get the cpu values 2 times for measuring the difference
 for my $iteration ( 0, 1 ) {
-	open FILE, "<", $stat_filename  or  die "Error: Cannot open file '$stat_filename'.";
-	while ( <FILE> ) {
-		if ( /^cpu/) {
-			my @values = split /\s+/;
-			my $object = shift @values;
-			push @{ $time_series{ $iteration }{ $object } }, @values;
-		}
-	}
-	close FILE  or  die "Error: Cannot close file '$stat_filename'.";
-	# Sleep some seconds between iterations
-	sleep 3  if  $iteration == 0;
+    open FILE, "<", $stat_filename  or  die "Error: Cannot open file '$stat_filename'.";
+    while ( <FILE> ) {
+        if ( /^cpu/) {
+            my @values = split /\s+/;
+            my $object = shift @values;
+            push @{ $time_series{ $iteration }{ $object } }, @values;
+        }
+    }
+    close FILE  or  die "Error: Cannot close file '$stat_filename'.";
+    # Sleep some seconds between iterations
+    sleep 3  if  $iteration == 0;
 }
 
 my %total_time = ();
@@ -71,28 +71,28 @@ my %diff_time = ();
 
 for my $iteration ( 0, 1 ) {
 
-	$total_time{ $iteration } = 0;
+    $total_time{ $iteration } = 0;
 
-	my $element = 0;
+    my $element = 0;
 
-	for ( @{ $time_series{ $iteration }{ 'cpu' } } ) {
-		$total_time{ $iteration } += $_;
+    for ( @{ $time_series{ $iteration }{ 'cpu' } } ) {
+        $total_time{ $iteration } += $_;
 
-		$diff_time{ 'cpu' }{ $element } = -$_  if  $iteration == 0;
-		$diff_time{ 'cpu' }{ $element } += $_  if  $iteration == 1;
+        $diff_time{ 'cpu' }{ $element } = -$_  if  $iteration == 0;
+        $diff_time{ 'cpu' }{ $element } += $_  if  $iteration == 1;
 
-		$element++;
-	}
+        $element++;
+    }
 }
 
 # That should be round about the sleep time times 100 (300 for 3 second sleep)
 my $diff_time_total = $total_time{1} - $total_time{0};
 
 if ( $opt_verbose ) {
-	print "Diff time:\n";
-	print Dumper( \%diff_time );
-	print "Time series:\n";
-	print Dumper( \%time_series );
+    print "Diff time:\n";
+    print Dumper( \%diff_time );
+    print "Time series:\n";
+    print Dumper( \%time_series );
 }
 
 
@@ -116,43 +116,43 @@ my $softirq_pct = $softirq_time / $diff_time_total * 100;
 ###
 
 for my $warn_check ( split /,/, $opt_warn // "" ) {
-	print "Warn check: $warn_check\n"  if  $opt_verbose;
-	if ( my ( $obj, $cmp, $value ) = $warn_check =~ /^([a-z]+)(\>)(\d+)$/ ) {
-		print "$obj $cmp $value\n" if  $opt_verbose;
-		if ( $obj eq "user" and $cmp eq ">" ) {
-			if ( $user_pct > $value ) {
-				$warn_count++;
-			}
-		} elsif ( $obj eq "nice" and $cmp eq ">" ) {
-		       if ( $nice_pct > $value ) {
-				$warn_count++;
-			}
-		} elsif ( $obj eq "system" and $cmp eq ">" ) {
-		       if ( $system_pct > $value ) {
-				$warn_count++;
-			}
-		} elsif ( $obj eq "idle" and $cmp eq ">" ) {
-		       if ( $idle_pct > $value ) {
-				$warn_count++;
-			}
-		} elsif ( $obj eq "iowait" and $cmp eq ">" ) {
-		       if ( $iowait_pct > $value ) {
-				$warn_count++;
-			}
-		} elsif ( $obj eq "irq" and $cmp eq ">" ) {
-		       if ( $irq_pct > $value ) {
-				$warn_count++;
-			}
-		} elsif ( $obj eq "softirq" and $cmp eq ">" ) {
-		       if ( $softirq_pct > $value ) {
-				$warn_count++;
-			}
-		} else {
-			die "Wrong parameter format. Try 'idle>70'";
-		}
-	} else {
-		die "Wrong parameter format. Try 'idle>70'";
-	}
+    print "Warn check: $warn_check\n"  if  $opt_verbose;
+    if ( my ( $obj, $cmp, $value ) = $warn_check =~ /^([a-z]+)(\>)(\d+)$/ ) {
+        print "$obj $cmp $value\n" if  $opt_verbose;
+        if ( $obj eq "user" and $cmp eq ">" ) {
+            if ( $user_pct > $value ) {
+                $warn_count++;
+            }
+        } elsif ( $obj eq "nice" and $cmp eq ">" ) {
+            if ( $nice_pct > $value ) {
+                $warn_count++;
+            }
+        } elsif ( $obj eq "system" and $cmp eq ">" ) {
+            if ( $system_pct > $value ) {
+                $warn_count++;
+            }
+        } elsif ( $obj eq "idle" and $cmp eq ">" ) {
+            if ( $idle_pct > $value ) {
+                $warn_count++;
+            }
+        } elsif ( $obj eq "iowait" and $cmp eq ">" ) {
+            if ( $iowait_pct > $value ) {
+                $warn_count++;
+            }
+        } elsif ( $obj eq "irq" and $cmp eq ">" ) {
+            if ( $irq_pct > $value ) {
+                $warn_count++;
+            }
+        } elsif ( $obj eq "softirq" and $cmp eq ">" ) {
+            if ( $softirq_pct > $value ) {
+                $warn_count++;
+            }
+        } else {
+            die "Wrong parameter format. Try 'idle>70'";
+        }
+    } else {
+        die "Wrong parameter format. Try 'idle>70'";
+    }
 }
 
 $answer .= sprintf "CPUs %.2f %% idle, %.2f %% user, %.2f %% system, %.2f %% iowait. ", $idle_pct, $user_pct, $system_pct, $iowait_pct;
@@ -191,29 +191,29 @@ exit 3; # 'Unknown' return code
 # Sub routine
 sub print_help() {
 
-	print STDERR <<~"END"
-		Check linux CPU utilization.
+    print STDERR <<~"END"
+    Check linux CPU utilization.
 
-		Usage: $0 -w WARNDEF
+    Usage: $0 -w WARNDEF
 
-		Example: $0 -w system>50
-		         Warns if system cpu utilization is above 50 %
+    Example: $0 -w system>50
+             Warns if system cpu utilization is above 50 %
 
-		Parameters:
+    Parameters:
 
-			-h, --help         Show this help text
-			-v, --verbose      Verbose output (for debugging)
-			-w, --warn DEF     Warn definition (see below)
+        -h, --help         Show this help text
+        -v, --verbose      Verbose output (for debugging)
+        -w, --warn DEF     Warn definition (see below)
 
-		Warn defintion:
+    Warn defintion:
 
-			ELEMENT>VALUE[,ELEMENT>VALUE[...]]
+        ELEMENT>VALUE[,ELEMENT>VALUE[...]]
 
-			Gives a warning result if ELEMENT is above VALUE percent CPU utilization.
-			Multiple defintions, comma separated, are allowed.
-			Example: idle>90,system>40
-			         Gives a warning, if idle util > 90 %, or system util > 40 %, or both.
+        Gives a warning result if ELEMENT is above VALUE percent CPU utilization.
+        Multiple defintions, comma separated, are allowed.
+        Example: idle>90,system>40
+                 Gives a warning, if idle util > 90 %, or system util > 40 %, or both.
 
-	END
+    END
 
 }
