@@ -62,8 +62,8 @@ for my $iteration ( 0, 1 ) {
 		}
 	}
 	close FILE  or  die "Error: Cannot close file '$stat_filename'.";
-	# Sleep some seconds
-	sleep 3;
+	# Sleep some seconds between iterations
+	sleep 3  if  $iteration == 0;
 }
 
 my %total_time = ();
