@@ -18,9 +18,13 @@ use JSON;
 use Data::Dumper;
 use Getopt::Long;
 
+# Sub routines
+sub print_help();
+
 my $opt_verbose;
 my $opt_host;
 my $opt_max_energy_1day;
+my $opt_help;
 
 my $answer = "";
 my $crit_count = 0;
@@ -34,7 +38,7 @@ my @additional = ();
 GetOptions( "h|hostname=s"       => \$opt_host,
             "v|verbose"          => \$opt_verbose,
             "max1day=f"          => \$opt_max_energy_1day,
-            #"help"               => \$opt_help,
+            "help"               => \$opt_help,
           )
 or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
 #or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 1; };
@@ -44,6 +48,10 @@ if ( ! $opt_host ) {
     exit 4;
 }
 
+if ( $opt_help ) {
+    print_help();
+    exit 10;  # Outside of the official monitoring plugin's exit codes
+}
 
 
 my $ua = LWP::UserAgent->new;
@@ -130,3 +138,33 @@ exit 2 if $status eq "Critical";
 exit 1 if $status eq "Warning";
 exit 0 if $status eq "Ok";
 exit 3; # 'Unknown' return code
+
+
+
+#
+# Print help
+#
+
+sub print_help() {
+
+    print STDERR <<~"END"
+    Check Tasmota Delock state.
+
+    Usage: $0 [--max1day ENERGY]
+
+    Example: $0
+             Critical when device state is OFF
+
+    Example: $0 --max1day 1.2
+             Critical when today's energy exceeds 1.2 kWh,
+             or when device state is OFF
+
+    Parameters:
+
+        -h, --help         Show this help text
+        -v, --verbose      Verbose output (for debugging)
+        --max1day ENERGY   Limit the today's energy
+
+    END
+
+}
