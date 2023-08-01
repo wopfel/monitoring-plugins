@@ -70,7 +70,7 @@ my $powerstatus = $response_json->{'StatusSTS'}->{'POWER'} // $response_json->{'
 $powerstatus = "\U$powerstatus";  # to uppercase
 if ( $powerstatus ne "ON" ) {
     $crit_count++;
-    push @additional, "[CRIT] Power status is $powerstatus";
+    push @additional, "[CRITICAL] Power status is $powerstatus";
 } else {
     push @additional, "[OK] Power status is $powerstatus";
 }

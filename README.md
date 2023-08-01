@@ -19,7 +19,7 @@ Version 12.3.1(tasmota)
 
 Critical: Server switch. Power status: OFF. Today 0.066 kWh.
 | powerstate=0 total=268.479 today=0.066 yesterday=0
-[CRIT] Power status is OFF
+[CRITICAL] Power status is OFF
 Version 12.3.1(tasmota)
 ```
 
