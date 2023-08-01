@@ -65,7 +65,9 @@ if ( my $friendlyname = $response_json->{'Status'}->{'FriendlyName'}->[0] ) {
     $answer .= "$friendlyname. "
 }
 
-my $powerstatus = $response_json->{'StatusSTS'}->{'POWER'};
+# Wenn POWER nicht belegt ist, dann POWER1 versuchen
+my $powerstatus = $response_json->{'StatusSTS'}->{'POWER'} // $response_json->{'StatusSTS'}->{'POWER1'};
+$powerstatus = "\U$powerstatus";  # to uppercase
 if ( $powerstatus ne "ON" ) {
     $crit_count++;
     push @additional, "[CRIT] Power status is $powerstatus";
