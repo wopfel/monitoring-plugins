@@ -141,10 +141,10 @@ sub check_motionsensors {
 
         if ( $reachable eq "1" ) {
             $device_ok++;
-            push @additional, "[OK] Device '$name'";
+            push @additional, "[OK] Device '$name' reachable";
         } else {
             $warn_count++;
-            push @additional, "[WARNING] Device '$name'";
+            push @additional, "[WARNING] Device '$name' not reachable";
         }
 
     }
@@ -191,10 +191,10 @@ sub check_heizkoerperthermostate {
 
         if ( $battery eq "ok" ) {
             $device_ok++;
-            push @additional, "[OK] Device '$name'";
+            push @additional, "[OK] Battery for '$name' ok";
         } else {
             $warn_count++;
-            push @additional, "[WARNING] Device '$name'";
+            push @additional, "[WARNING] Low battery for '$name'";
         }
 
     }
@@ -242,10 +242,10 @@ sub check_bewegungsmelder {
 
         if ( $battery eq "ok" ) {
             $device_ok++;
-            push @additional, "[OK] Device '$name'";
+            push @additional, "[OK] Battery for '$name' ok";
         } else {
             $warn_count++;
-            push @additional, "[WARNING] Device '$name'";
+            push @additional, "[WARNING] Low battery for '$name'";
         }
 
     }
@@ -294,10 +294,10 @@ sub check_mqttclient {
 
         if ( $state_value eq "opened" ) {
             $device_ok++;
-            push @additional, "[OK] Device '$name'";
+            push @additional, "[OK] Device '$name' is opened";
         } else {
             $warn_count++;
-            push @additional, "[WARNING] Device '$name'";
+            push @additional, "[WARNING] Device '$name' is not opened";
         }
 
     }
