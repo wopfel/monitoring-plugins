@@ -9,7 +9,10 @@ Some of my monitoring plugins that can be used by Icinga, for example.
 Checks if the power state of a Delock Tasmota adapter is on.
 I'm using this script to check a Delock model 11827.
 
-Example output having the power state on, and off:
+Checks the today's energy. Raises a critical state if the today's
+energy consumption exceeds the given energy when using `vars.delock_max1day` in host definition.
+
+Example output having the power state on, and off, and off plus exceeding max. energy value for a day:
 
 ```
 Ok: Server switch. Power status: ON. Today 0.066 kWh.
@@ -21,6 +24,11 @@ Critical: Server switch. Power status: OFF. Today 0.066 kWh.
 | powerstate=0 total=268.479 today=0.066 yesterday=0
 [CRITICAL] Power status is OFF
 Version 12.3.1(tasmota)
+
+Critical: Hauswasserwerk. Power status: OFF. Today 1.036 kWh.
+[CRITICAL] Power status is OFF
+[CRITICAL] Max. energy for one day (0.200000) exceeds today's consumption (1.036)
+Version 12.2.0(tasmota)
 ```
 
 Command definition in Icinga:
@@ -31,9 +39,13 @@ object CheckCommand "delock" {
 
   arguments += {
     "--hostname" = "$address$"
+    "--max1day" = {
+        set_if = {{ string(macro("$delock_max1day$")) != "" }}
+        description = "Max. energy for 1 day in kWh"
+        value = "$delock_max1day$"
+    }
   }
-}
-```
+}```
 
 Service definition in Icinga (example):
 
@@ -44,6 +56,18 @@ apply Service "status" {
   check_command = "delock"
 
   assign where match("delock-*", host.name)
+}
+```
+
+Host definition in Icinga (example):
+
+```
+object Host "delock-hauswasserpumpe-keller" {
+  import "generic-host"
+
+  address = "192.168.209.8"
+
+  vars.delock_max1day = 0.200
 }
 ```
 

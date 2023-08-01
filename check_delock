@@ -20,6 +20,7 @@ use Getopt::Long;
 
 my $opt_verbose;
 my $opt_host;
+my $opt_max_energy_1day;
 
 my $answer = "";
 my $crit_count = 0;
@@ -32,6 +33,7 @@ my @additional = ();
 # Process command line options
 GetOptions( "h|hostname=s"       => \$opt_host,
             "v|verbose"          => \$opt_verbose,
+            "max1day=f"          => \$opt_max_energy_1day,
             #"help"               => \$opt_help,
           )
 or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
@@ -89,6 +91,16 @@ if ( defined $today ) {
 my $yesterday = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Yesterday'};
 if ( defined $yesterday ) {
     push @perfdata, "yesterday=$yesterday";
+}
+
+# Check for maximum energy
+if ( defined $opt_max_energy_1day ) {
+    if ( $today > $opt_max_energy_1day ) {
+        $crit_count++;
+        push @additional, "[CRITICAL] Max. energy for one day ($opt_max_energy_1day) exceeds today's consumption ($today)";
+    } else {
+        push @additional, "[OK] Max. energy for one day ($opt_max_energy_1day) is lower than today's consumption ($today)";
+    }
 }
 
 # Get version
