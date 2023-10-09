@@ -62,32 +62,32 @@ print $response->decoded_content if $opt_verbose;
 print Dumper( $token )  if  $opt_verbose;
 
 
-    $ua = LWP::UserAgent->new;
-    my $url = "http://$opt_host:8083/fhem?cmd=update%20check&XHR=1";
-    $response = $ua->post( $url, [ 'fwcsrf' => $token ] );
-    my $output = $response->decoded_content;
+$ua = LWP::UserAgent->new;
+my $url = "http://$opt_host:8083/fhem?cmd=update%20check&XHR=1";
+$response = $ua->post( $url, [ 'fwcsrf' => $token ] );
+my $output = $response->decoded_content;
 
-    print Dumper( $output )  if  $opt_verbose;
+print Dumper( $output )  if  $opt_verbose;
 
-    my $update_count = scalar grep /^UPD /, split /\n/, $output;
-    print Dumper( $update_count )  if  $opt_verbose;
+my $update_count = scalar grep /^UPD /, split /\n/, $output;
+print Dumper( $update_count )  if  $opt_verbose;
 
-    my $update_count_modules = scalar grep /^UPD FHEM\/\d\d_/, split /\n/, $output;
-    print Dumper( $update_count_modules )  if  $opt_verbose;
+my $update_count_modules = scalar grep /^UPD FHEM\/\d\d_/, split /\n/, $output;
+print Dumper( $update_count_modules )  if  $opt_verbose;
 
-    my $update_count_main = scalar grep /^UPD \.\/fhem\.pl$/, split /\n/, $output;
-    print Dumper( $update_count_main )  if  $opt_verbose;
+my $update_count_main = scalar grep /^UPD \.\/fhem\.pl$/, split /\n/, $output;
+print Dumper( $update_count_main )  if  $opt_verbose;
 
-    ##
-    
-    $answer .= "Main Fhem program needs update. "  if  $update_count_main;
-    $answer .= "$update_count_modules modules need update. "  if  $update_count_modules;
+##
 
-    if ( $update_count == 0 ) {
-        $answer .= "Everything is up to date. ";
-    } else {
-        $warn_count++;
-    }
+$answer .= "Main Fhem program needs update. "  if  $update_count_main;
+$answer .= "$update_count_modules modules need update. "  if  $update_count_modules;
+
+if ( $update_count == 0 ) {
+    $answer .= "Everything is up to date. ";
+} else {
+    $warn_count++;
+}
 
 
 
