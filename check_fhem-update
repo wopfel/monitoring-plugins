@@ -7,7 +7,7 @@
 #  Usage:   ./check_fhem-update --host FHEM_HOSTNAME
 #
 #  Copyright (C) 2023 Bernd Arnold
-#  #TODO https://github.com/wopfel/monitoring-plugins
+#  https://github.com/wopfel/monitoring-plugins
 #
 #  Sample output:
 #  Warning: Main Fhem program needs update. 571 modules need update.
