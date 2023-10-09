@@ -1,0 +1,118 @@
+#!/usr/bin/perl
+
+##################
+#
+#  Check Fhem update
+#
+#  Usage:   ./check_fhem-update --host FHEM_HOSTNAME
+#
+#  Copyright (C) 2023 Bernd Arnold
+#  #TODO https://github.com/wopfel/monitoring-plugins
+#
+#  Sample output:
+#  Warning: Main Fhem program needs update. 571 modules need update.
+#  Ok: Everything is up to date.
+#
+##################
+
+
+use strict;
+use warnings;
+use LWP::UserAgent;
+use Data::Dumper;
+use Getopt::Long;
+
+my $opt_host;
+my $opt_verbose;
+
+my $answer = "";
+my $crit_count = 0;
+my $warn_count = 0;
+my $status = "Unknown";
+my @perfdata = ();
+my @additional = ();
+
+
+# Process command line options
+GetOptions( "h|hostname=s"   => \$opt_host,
+            "v|verbose"      => \$opt_verbose,
+)
+    or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
+
+
+if ( ! $opt_host ) {
+    print STDERR "Error: option --host missing.\n";
+    exit 4;
+}
+
+
+
+# Get CSRF token
+my $ua = LWP::UserAgent->new;
+my $response = $ua->get( "http://$opt_host:8083/" );
+my $token = $response->header('X-FHEM-csrfToken');
+
+unless ( $response->is_success ) {
+    print "UNKNOWN: $response->status_line";
+    exit 3;
+}
+
+print $response->decoded_content if $opt_verbose;
+
+print Dumper( $token )  if  $opt_verbose;
+
+
+    $ua = LWP::UserAgent->new;
+    my $url = "http://$opt_host:8083/fhem?cmd=update%20check&XHR=1";
+    $response = $ua->post( $url, [ 'fwcsrf' => $token ] );
+    my $output = $response->decoded_content;
+
+    print Dumper( $output )  if  $opt_verbose;
+
+    my $update_count = scalar grep /^UPD /, split /\n/, $output;
+    print Dumper( $update_count )  if  $opt_verbose;
+
+    my $update_count_modules = scalar grep /^UPD FHEM\/\d\d_/, split /\n/, $output;
+    print Dumper( $update_count_modules )  if  $opt_verbose;
+
+    my $update_count_main = scalar grep /^UPD \.\/fhem\.pl$/, split /\n/, $output;
+    print Dumper( $update_count_main )  if  $opt_verbose;
+
+    ##
+    
+    $answer .= "Main Fhem program needs update. "  if  $update_count_main;
+    $answer .= "$update_count_modules modules need update. "  if  $update_count_modules;
+
+    if ( $update_count == 0 ) {
+        $answer .= "Everything is up to date. ";
+    } else {
+        $warn_count++;
+    }
+
+
+
+#
+# Build output
+#
+
+if ( $crit_count ) {
+    $status = "Critical";
+} elsif ( $warn_count ) {
+    $status = "Warning";
+} else {
+    $status = "Ok";
+}
+
+print "$status: ";
+print "$answer\n";
+
+print "| " . join(" ", @perfdata) . "\n"  if @perfdata;
+print join("\n", @additional) . "\n"  if @additional;
+
+exit 2 if $status eq "Critical";
+exit 1 if $status eq "Warning";
+exit 0 if $status eq "Ok";
+exit 3; # 'Unknown' return code
+
+
+
