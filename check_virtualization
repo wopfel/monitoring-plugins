@@ -47,7 +47,7 @@ for ( @lxc_out ) {
 			push @add_info, "[OK] container $name is stopped";
 		} else {
 			$warning_count++;
-			push @add_info, "[WARN] container $name is stopped";
+			push @add_info, "[WARNING] container $name is stopped";
 		}
 	}
 
@@ -70,7 +70,7 @@ for ( @qm_out ) {
 			push @add_info, "[OK] VM $name is stopped";
 		} else {
 			$warning_count++;
-			push @add_info, "[WARN] VM $name is stopped";
+			push @add_info, "[WARNING] VM $name is stopped";
 		}
 	}
 
