@@ -21,6 +21,8 @@ sub print_help();
 
 my $opt_verbose;
 my $opt_help;
+my $opt_stopped;
+my @stopped_state;  # VMs and LXCs that should be stopped
 
 
 my $perfdata;
@@ -32,12 +34,17 @@ my @add_info = ();  # Additinal info
 # Process command line options
 GetOptions( "v|verbose"          => \$opt_verbose,
             "help"               => \$opt_help,
+            "stopped=s"          => \$opt_stopped,
           )
 or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
 
 if ( $opt_help ) {
     print_help();
     exit 10;  # Outside of the official monitoring plugin's exit codes
+}
+
+if ( $opt_stopped ) {
+	@stopped_state = split /,/, $opt_stopped;
 }
 
 
@@ -72,13 +79,16 @@ for ( @lxc_out ) {
 	$lxc_status{'stopped'}++  if  $status eq "stopped";
 	$lxc_status{'total'}++;
 
-	if ( $status eq "stopped" ) {
+    my $desired_state = "running";
+    if ( grep { $name eq $_ } @stopped_state ) { $desired_state = "stopped"; }
+
+	if ( $status ne $desired_state ) {
 		if ( $name =~ /^testct.*/ ) {
 			# testct* may be down, no warning raised
-			push @add_info, "[OK] container $name is stopped";
+			push @add_info, "[OK] container $name is $status";
 		} else {
 			$warning_count++;
-			push @add_info, "[WARNING] container $name is stopped";
+			push @add_info, "[WARNING] container $name is $status";
 		}
 	}
 
@@ -95,13 +105,16 @@ for ( @qm_out ) {
 	$qm_status{'stopped'}++  if  $status eq "stopped";
 	$qm_status{'total'}++;
 
-	if ( $status eq "stopped" ) {
+    my $desired_state = "running";
+    if ( grep { $name eq $_ } @stopped_state ) { $desired_state = "stopped"; }
+
+	if ( $status ne $desired_state ) {
 		if ( $name =~ /^testct.*/ ) {
 			# testct* may be down, no warning raised
-			push @add_info, "[OK] VM $name is stopped";
+			push @add_info, "[OK] VM $name is $status";
 		} else {
 			$warning_count++;
-			push @add_info, "[WARNING] VM $name is stopped";
+			push @add_info, "[WARNING] VM $name is $status";
 		}
 	}
 
@@ -148,19 +161,20 @@ sub print_help() {
     print STDERR <<~"END"
     Check LXC and QM virtualization status.
 
-    Usage: $0 [--TODO_TODO_TODO]
+    Usage: $0 [--stopped NAME[,NAME,...]]
 
     Example: $0
              Warning, when at least one LXC, or VM has a stopped state.
 
-    Example: $0 --TODO
-             TODO
+    Example: $0 --stopped vm1,vm5
+             Warning, when at least one LXC, or VM has a stopped state (excluding vm1 and vm5).
+             Warning, when state of vm1 or vm5 isn't stopped.
 
     Parameters:
 
         -h, --help         Show this help text
         -v, --verbose      Verbose output (for debugging)
-        --TODO             TODO
+        --stopped NAME     List of LXCs and VMs that should be stopped (comma separated name list)
 
     END
 
