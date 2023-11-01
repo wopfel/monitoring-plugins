@@ -13,14 +13,34 @@
 
 use strict;
 use warnings;
+use Getopt::Long;
 
 
+# Sub routines
+sub print_help();
 
-my $verbose = 0;
+my $opt_verbose;
+my $opt_help;
+
+
 my $perfdata;
 my $warning_count = 0;
 my $error_count = 0;
 my @add_info = ();  # Additinal info
+
+
+# Process command line options
+GetOptions( "v|verbose"          => \$opt_verbose,
+            "help"               => \$opt_help,
+          )
+or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
+
+if ( $opt_help ) {
+    print_help();
+    exit 10;  # Outside of the official monitoring plugin's exit codes
+}
+
+
 
 my $lxc_out = qx@ /usr/sbin/pct list @;
 my $qm_out =  qx@ /usr/sbin/qm list @;
@@ -28,11 +48,11 @@ my $qm_out =  qx@ /usr/sbin/qm list @;
 my @lxc_out = split /\n/, $lxc_out;
 my @qm_out  = split /\n/, $qm_out;
 
-#print "<<LXC:\n$lxc_out\n>>\n"  if  $verbose;
-#print "<<QM:\n$qm_out\n>>\n"    if  $verbose;
+#print "<<LXC:\n$lxc_out\n>>\n"  if  $opt_verbose;
+#print "<<QM:\n$qm_out\n>>\n"    if  $opt_verbose;
 
-print "<<LXC list:\n@lxc_out\n>>\n"  if  $verbose;
-print "<<QM list:\n@qm_out\n>>\n"    if  $verbose;
+print "<<LXC list:\n@lxc_out\n>>\n"  if  $opt_verbose;
+print "<<QM list:\n@qm_out\n>>\n"    if  $opt_verbose;
 
 #my @lxc;
 #my @qm;
@@ -115,4 +135,34 @@ print "\n";
 exit 2 if $error_count;
 exit 1 if $warning_count;
 exit 0;
+
+
+
+
+#
+# Print help
+#
+
+sub print_help() {
+
+    print STDERR <<~"END"
+    Check LXC and QM virtualization status.
+
+    Usage: $0 [--TODO_TODO_TODO]
+
+    Example: $0
+             Warning, when at least one LXC, or VM has a stopped state.
+
+    Example: $0 --TODO
+             TODO
+
+    Parameters:
+
+        -h, --help         Show this help text
+        -v, --verbose      Verbose output (for debugging)
+        --TODO             TODO
+
+    END
+
+}
 
