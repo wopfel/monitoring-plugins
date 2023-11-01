@@ -133,6 +133,40 @@ OK: 9/10 containers running, 14/14 VMs running. | lxc_running=9 lxc_total=10 qm_
 
 For stopped containers matching the pattern `testct*` there is no error raised.
 
+Service definition in Icinga (example):
+
+```
+apply Service "virtualization" {
+  import "generic-service"
+
+  check_command = "by_ssh"
+
+  vars.by_ssh_command = [ "/usr/bin/sudo", "/usr/local/bin/check_virtualization" ]
+  vars.by_ssh_logname = "icinga"
+  if ( host.vars.virtualization_stopped ) {
+      vars.by_ssh_arguments += {
+        "--stopped" = {
+          value = host.vars.virtualization_stopped
+        }
+      }
+  }
+
+  assign where host.vars.checkbyssh == true && match("proxmox*", host.name)
+}
+```
+
+Host definition in Icinga (example):
+
+```
+object Host "proxmox1" {
+  import "generic-host"
+
+  address = "..."
+
+  vars.virtualization_stopped = "lxc7,vm42"
+}
+```
+
 
 ## check_lxc-info
 
