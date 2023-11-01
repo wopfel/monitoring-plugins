@@ -11,8 +11,8 @@ my $warning_count = 0;
 my $error_count = 0;
 my @add_info = ();  # Additinal info
 
-my $lxc_out = qx/ pct list /;
-my $qm_out =  qx/ qm list /;
+my $lxc_out = qx@ /usr/sbin/pct list @;
+my $qm_out =  qx@ /usr/sbin/qm list @;
 
 my @lxc_out = split /\n/, $lxc_out;
 my @qm_out  = split /\n/, $qm_out;
