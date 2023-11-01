@@ -45,7 +45,8 @@ object CheckCommand "delock" {
         value = "$delock_max1day$"
     }
   }
-}```
+}
+```
 
 Service definition in Icinga (example):
 
