@@ -1,5 +1,16 @@
 #!/usr/bin/perl
 
+##################
+#
+#  Check LXC and qm virtualization items on Proxmox
+#
+#  Usage:   ...
+#
+#  Copyright (C) 2023 Bernd Arnold
+#  https://github.com/wopfel/monitoring-plugins
+#
+##################
+
 use strict;
 use warnings;
 
