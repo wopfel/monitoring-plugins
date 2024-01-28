@@ -1,0 +1,229 @@
+#!/usr/bin/perl
+
+##################
+#
+#  Check a HDG Bavaria Pelletheizung
+#
+#  Usage:   ...
+#
+#  Copyright (C) 2024 Bernd Arnold
+#  https://github.com/wopfel/monitoring-plugins
+#
+##################
+
+use strict;
+use warnings;
+require LWP::UserAgent;
+use Data::Dumper;
+use Getopt::Long;
+
+# Sub routines
+sub print_help();
+
+my $opt_verbose;
+my $opt_host;
+my $opt_help;
+
+my $answer = "";
+my $crit_count = 0;
+my $warn_count = 0;
+my $status = "Unknown";
+my @perfdata = ();
+my @additional = ();
+
+
+# Process command line options
+GetOptions( "h|hostname=s"       => \$opt_host,
+            "v|verbose"          => \$opt_verbose,
+            "help"               => \$opt_help,
+          )
+or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
+#or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 1; };
+
+if ( ! $opt_host ) {
+    print STDERR "Error: option -host missing.\n";
+    exit 4;
+}
+
+if ( $opt_help ) {
+    print_help();
+    exit 10;  # Outside of the official monitoring plugin's exit codes
+}
+
+
+my $ua = LWP::UserAgent->new;
+
+my $response = $ua->get( "http://$opt_host/index.php?hdg_set=1&hdg_group=1&hdg_tab=2" );
+
+if ( $response->is_success ) {
+#     print $response->decoded_content;  # or whatever
+}
+else {
+    print "UNKNOWN: $response->status_line";
+    exit 3;
+}
+
+print Dumper( $response->decoded_content ) if $opt_verbose;
+
+
+# Doesn't work. Is always there.
+#if ( $response->decoded_content =~ m{<li id="system_warnings" class="live" data-id="20029" style="background-image:url\(images/_interface/iconsheet_warnung_none.png\);">} ) {
+#$warn_count++;
+#push @additional, "[WARNING] Stoerung vorhanden.";
+#} else {
+#push @additional, "[OK] Keine Stoerung gefunden.";
+#}
+
+my @tr_blocks = $response->decoded_content =~ m{<tr>(.*?)</tr>}gms;
+
+#my @lines = split /\n/, $response->decoded_content;
+print Dumper( \@tr_blocks ) if $opt_verbose;
+
+if ( $tr_blocks[0] =~ m{<td style="text-align:right;">Kommt</td>} ) {
+	        $warn_count++;
+		# <td style="text-align:left;">Ascheaustragung blockiert</td>
+		my ( $kommt_msg ) = $tr_blocks[0] =~ m{<td style="text-align:left;">(.*)</td>};
+        	push @additional, "[WARNING] Offene Kommt-Meldung: $kommt_msg.";
+		$answer .= "$kommt_msg. ";
+	} else {
+        	push @additional, "[OK] Keine offene Kommt-Meldung gefunden.";
+	}
+
+my $kommt_count = scalar grep />Kommt</, @tr_blocks;
+my $geht_count = scalar grep />Geht</, @tr_blocks;
+$answer .= "$kommt_count Kommt-, $geht_count Geht-Meldungen. ";
+
+
+#
+# Go through array in reverse order
+#
+
+my %messages;
+
+for my $tr_block ( reverse @tr_blocks ) {
+
+	# Sample:
+	# <td></td>
+	# <td style="color:#999; height:42px;">28.01.2024&nbsp;05:09</td>
+	# <td style="text-align:left;">Ascheaustragung blockiert</td>
+	# <td style="text-align:left;">
+	# 	<span class="not_text_85"></span>
+	# </td>
+	# <td style="text-align:right;">Kommt</td>
+	# <td></td>
+
+	# Excerpt from hexdump:
+	# 00001ec0  73 70 61 6e 3e 0d 0a 09  09 09 09 3c 2f 74 64 3e  |span>......</td>|
+	
+	my ( $date, $time, $text1, $kommtgeht ) = $tr_block =~
+		m{ \s*
+		   <td></td>\r\n
+		   \s*
+		   <td\sstyle.*?>(\d\d\.\d\d\.2\d\d\d)&nbsp;(\d\d:\d\d)</td>\r\n
+		   \s*
+		   <td\sstyle.*?>(.*?)</td>\r\n
+		   \s*
+		   <td\sstyle.*?>\r\n
+		   \s*
+		   <span\s.*?>.*?</span>\r\n
+		   \s*
+		   </td>\r\n
+		   \s*
+		   <td\sstyle.*?>(Kommt|Geht)</td>\r\n
+
+		 }x;
+
+	# Kommt increases the counter, Geht decreases the counter
+	# Every commited messages (Kommt + Geht) should lead to a zero for this message
+	my $increase_decrease = 1;
+	$increase_decrease = -1  if  $kommtgeht eq "Geht";
+	$messages{ $text1 } += $increase_decrease;
+
+}
+
+for my $msg ( keys %messages ) {
+
+	my $balance = $messages{ $msg };
+
+	if ( $balance == 0 ) {
+        	push @additional, "[OK] Meldung quittiert: $msg.";
+	} else {
+	        $warn_count++;
+        	push @additional, "[WARNING] Meldung offen: $msg.";
+	}
+
+}
+
+
+###
+
+my $url = "http://$opt_host/ApiManager.php?action=dataRefresh";
+$response = $ua->post( $url, [ 'nodes' => '20029T-20029' ] );
+my $json = $response->decoded_content;
+print Dumper( $json )  if  $opt_verbose;
+
+# text equals 0 -> warnung_none (reference: common.js)
+# text equals 1 -> warnung
+# text equals 2 -> stoerung
+if ( $json eq '[{"background":"","text":"0.0","hidden":true,"id":20029}]' ) {
+        push @additional, "[OK] JSON von ApiManager ok.";
+} elsif ( $json eq '[{"background":"","text":"1.0","hidden":true,"id":20029}]' ) {
+	$warn_count++;
+	$answer .= "Warnung vorhanden. ";
+        push @additional, "[WARNING] Warnung vorhanden (text=1).";
+} elsif ( $json eq '[{"background":"","text":"2.0","hidden":true,"id":20029}]' ) {
+	$crit_count++;
+	$answer .= "Stoerung vorhanden. ";
+        push @additional, "[CRITICAL] Stoerung vorhanden (text=2).";
+} else {
+	$warn_count++;
+	$answer .= "Moeglicherweise Warnung vorhanden. Antwort: $json. ";
+        push @additional, "[WARNING] JSON seltsam.";
+}
+
+
+###
+
+if ( $crit_count ) {
+    $status = "Critical";
+} elsif ( $warn_count ) {
+    $status = "Warning";
+} else {
+    $status = "Ok";
+}
+
+print "$status: ";
+print "$answer\n";
+
+print "| " . join(" ", @perfdata) . "\n"  if @perfdata;
+print join("\n", @additional) . "\n"  if @additional;
+
+exit 2 if $status eq "Critical";
+exit 1 if $status eq "Warning";
+exit 0 if $status eq "Ok";
+exit 3; # 'Unknown' return code
+
+
+
+#
+# Print help
+#
+
+sub print_help() {
+
+    print STDERR <<~"END"
+    Check HDG Bavaria Pelletheizung.
+
+    Usage: $0
+
+    Example: $0
+             Warning when messages not confirmed.
+
+    Parameters:
+
+        -h, --help         Show this help text
+        -v, --verbose      Verbose output (for debugging)
+
+    END
+
+}
