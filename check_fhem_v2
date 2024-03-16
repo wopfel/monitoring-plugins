@@ -81,6 +81,8 @@ if ( $opt_item eq "heizkoerperthermostate" ) {
     check_bewegungsmelder();
 } elsif ( $opt_item eq "mqttclient" ) {
     check_mqttclient();
+} elsif ( $opt_item eq "fensterkontakt" ) {
+    check_fensterkontakt();
 } else {
     print STDERR "Error: invalid option --item given.\n";
     exit 4;
@@ -310,3 +312,60 @@ sub check_mqttclient {
     }
 
 }
+
+
+
+
+
+#
+# Check battery state of Homematic HM-SEC-SCO
+#
+
+sub check_fensterkontakt {
+
+    $ua = LWP::UserAgent->new;
+    my $url = "http://$opt_host:8083/fhem?cmd=jsonlist2%20(HM_)?Fensterstatus_.*:FILTER=model=HM-SEC-SCO&XHR=1";
+    $response = $ua->post( $url, [ 'fwcsrf' => $token ] );
+    my $json = $response->decoded_content;
+
+    print Dumper( $json )  if  $opt_verbose;
+
+    my $response_json = decode_json( $json );
+
+    print Dumper( $response_json )  if  $opt_verbose;
+
+    my $device_count = 0;
+    my $device_ok = 0;
+
+    for my $sensor ( @{ $response_json->{'Results'} } ) {
+
+        $device_count++;
+
+        print Dumper( $sensor )  if  $opt_verbose;
+        my $name = $sensor->{'Name'};
+        my $battery = $sensor->{'Readings'}->{'battery'}->{'Value'};
+        print "# Name=$name, Battery=$battery.\n"  if  $opt_verbose;
+
+        if ( $battery eq "ok" ) {
+            $device_ok++;
+            push @additional, "[OK] Battery for '$name' ok";
+        } else {
+            $warn_count++;
+            push @additional, "[WARNING] Low battery for '$name'";
+        }
+
+    }
+
+    if ( $device_count == $device_ok ) {
+        $answer .= "Alle Fhem-Devices ok. ";
+    } else {
+        $warn_count++;
+        $answer .= "nur $device_ok von $device_count haben Batterie=ok. ";
+    }
+
+}
+
+
+
+
+
