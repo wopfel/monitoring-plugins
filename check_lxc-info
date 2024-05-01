@@ -24,6 +24,12 @@ if ( $lxc_out =~ /doesn't exist/ ) {
 	exit 3;  # UNKNOWN
 }
 
+# Case when LXC is stopped
+if ( $lxc_out =~ /State:\s+STOPPED/ ) {
+	print "CRITICAL: container $lxc_id is stopped.\n";
+	exit 2;  # CRITICAL
+}
+
 my @lxc_out = split /\n/, $lxc_out;
 
 print "<<LXC:\n$lxc_out\n>>\n"  if  $verbose;
