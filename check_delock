@@ -35,7 +35,10 @@ my @perfdata = ();
 my @additional = ();
 
 
+#
 # Process command line options
+#
+
 GetOptions( "h|hostname=s"       => \$opt_host,
             "v|verbose"          => \$opt_verbose,
             "max1day=f"          => \$opt_max_energy_1day,
@@ -66,6 +69,10 @@ if ( $opt_power_status ) {
 }
 
 
+#
+# Query device
+#
+
 my $ua = LWP::UserAgent->new;
 
 my $response = $ua->get( "http://$opt_host/cm?cmnd=Status 0" );
@@ -87,9 +94,15 @@ if ( my $friendlyname = $response_json->{'Status'}->{'FriendlyName'}->[0] ) {
     $answer .= "$friendlyname. "
 }
 
-# Wenn POWER nicht belegt ist, dann POWER1 versuchen
+
+#
+# Check results
+#
+
+# Get value from POWER, or POWER1 if POWER is undefined
 my $powerstatus = $response_json->{'StatusSTS'}->{'POWER'} // $response_json->{'StatusSTS'}->{'POWER1'};
 $powerstatus = "\U$powerstatus";  # to uppercase
+
 if ( $opt_power_status eq "IGNORE" ) {
     push @additional, "[OK] Power status is $powerstatus (ignored)";
 } elsif ( $powerstatus ne $opt_power_status ) {
@@ -98,18 +111,24 @@ if ( $opt_power_status eq "IGNORE" ) {
 } else {
     push @additional, "[OK] Power status is $powerstatus";
 }
+
 $answer .= "Power status: $powerstatus. ";
 push @perfdata, sprintf("powerstate=%d", $powerstatus eq "ON" ? 1 : 0)  if  defined $powerstatus;
 
+# Total energy
 my $total = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Total'};
 if ( defined $total ) {
     push @perfdata, "total=$total";
 }
+
+# Today's energy
 my $today = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Today'};
 if ( defined $today ) {
     push @perfdata, "today=$today";
     $answer .= "Today $today kWh. ";
 }
+
+# Yesterday's energy
 my $yesterday = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Yesterday'};
 if ( defined $yesterday ) {
     push @perfdata, "yesterday=$yesterday";
@@ -151,7 +170,7 @@ print join("\n", @additional) . "\n"  if @additional;
 exit 2 if $status eq "Critical";
 exit 1 if $status eq "Warning";
 exit 0 if $status eq "Ok";
-exit 3; # 'Unknown' return code
+exit 3;  # 'Unknown' return code
 
 
 
