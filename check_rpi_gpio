@@ -6,8 +6,6 @@
 #
 #  Usage:   ...
 #
-#  Be careful! Parameters are passed to the shell using qx//
-#
 #  Copyright (C) 2024 Bernd Arnold
 #  https://github.com/wopfel/monitoring-plugins
 #
@@ -37,8 +35,7 @@ my @additional = ();
 # Process command line options
 #
 
-GetOptions( "h|hostname=s"       => \$opt_host,
-            "v|verbose"          => \$opt_verbose,
+GetOptions( "v|verbose"          => \$opt_verbose,
             "help"               => \$opt_help,
           )
 or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 4; };
@@ -48,33 +45,42 @@ if ( $opt_help ) {
     exit 4;  # Outside of the official monitoring plugin's exit codes
 }
 
-if ( ! $opt_host ) {
-    print STDERR "Error: option -host missing.\n";
+
+#
+# Query files
+#
+
+opendir( my $dh, '/sys/class/gpio/' );
+if ( ! $dh ) {
+    print STDERR "Error: cannot open dir '/sys/class/gpio/'.\n";
     exit 4;
 }
+my @gpioports = grep { /^gpio\d+$/ && -d "/sys/class/gpio/$_" && -f "/sys/class/gpio/$_/value" } readdir( $dh );
+closedir $dh;
 
-
-#
-# Query device
-#
-
-# Sample output
-# $ ssh -l icinga raspberrypi-528c.lan 'grep . /sys/class/gpio/gpio[0-9]*/value'
-# /sys/class/gpio/gpio530/value:1
-# /sys/class/gpio/gpio539/value:0
-
-my $output = qx{ ssh -l icinga $opt_host 'grep . /sys/class/gpio/gpio[0-9]*/value' };
-print Dumper( $output ) if $opt_verbose;
+print Dumper( \@gpioports ) if $opt_verbose;
 
 my $gpio_count = 0;
 my $high_count = 0;
 my $low_count = 0;
 
-for my $line ( split /\n/, $output ) {
-    # /sys/class/gpio/gpio530/value:0
-    next unless $line =~ m{^/sys/class/gpio/gpio(\d+)/value:(\d)$};
-    my ( $port, $value ) = ( $1, $2 );
-    print Dumper( $line ) if $opt_verbose;
+for my $gpioport ( @gpioports ) {
+
+    open my $fh, "<", "/sys/class/gpio/$gpioport/value";
+    if ( ! $fh ) {
+        print STDERR "Error: cannot open file '/sys/class/gpio/$gpioport/value'.\n";
+        exit 4;
+    }
+    my $value = <$fh>;
+    close $fh;
+
+    # Remove newline
+    chomp $value;
+
+    print Dumper( $value ) if $opt_verbose;
+
+    my ( $port ) = $gpioport =~ /^gpio(\d+)$/;
+
     $gpio_count++;
     push @perfdata, "gpio_$port=$value";
     $high_count++  if  $value == 1;

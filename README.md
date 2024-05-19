@@ -238,6 +238,38 @@ Sorry for the misleading item options. `bewegungsmelder` checks the battery stat
 #TODO: battery/reachable as parameter  
 
 
+## check_rpi_gpio
+
+Place this script on your Raspberry Pi. It scans for the GPIO files in the /sys directory. There's no alerting so far.
+
+Call the script using by_ssh. Example:
+
+```
+apply Service "gpio-ports" {
+  import "generic-service"
+
+  check_command = "by_ssh"
+
+  vars.sshplugindir = "/usr/local/bin"
+
+  vars.by_ssh_command = [ vars.sshplugindir + "/check_rpi_gpio" ]
+  vars.by_ssh_logname = "icinga"
+
+  assign where host.name == "..."
+}
+```
+
+Your login account on your Pi has to be granted access to the GPIO files. Example: `adduser icinga gpio`
+
+Sample output:
+
+```
+# /usr/local/bin/check_rpi_gpio
+Ok: 2 GPIO ports found.
+| gpio_530=1 gpio_539=0 gpio_count=2 high_count=1 low_count=1
+```
+
+
 ## TODO
 
 * Make check scripts customizable using Getopt::Long
