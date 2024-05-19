@@ -45,11 +45,11 @@ GetOptions( "h|hostname=s"       => \$opt_host,
             "s|powerstatus=s"    => \$opt_power_status,
             "help"               => \$opt_help,
           )
-or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 1; };
+or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 4; };
 
 if ( $opt_help ) {
     print_help();
-    exit 10;  # Outside of the official monitoring plugin's exit codes
+    exit 4;  # Outside of the official monitoring plugin's exit codes
 }
 
 if ( ! $opt_host ) {
