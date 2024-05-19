@@ -25,6 +25,7 @@ my $opt_verbose;
 my $opt_host;
 my $opt_max_energy_1day;
 my $opt_help;
+my $opt_power_status = "on";
 
 my $answer = "";
 my $crit_count = 0;
@@ -38,6 +39,7 @@ my @additional = ();
 GetOptions( "h|hostname=s"       => \$opt_host,
             "v|verbose"          => \$opt_verbose,
             "max1day=f"          => \$opt_max_energy_1day,
+            "s|powerstatus=s"    => \$opt_power_status,
             "help"               => \$opt_help,
           )
 or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
@@ -51,6 +53,16 @@ if ( ! $opt_host ) {
 if ( $opt_help ) {
     print_help();
     exit 10;  # Outside of the official monitoring plugin's exit codes
+}
+
+if ( $opt_power_status ) {
+    if ( $opt_power_status eq "on" or $opt_power_status eq "off" or $opt_power_status eq "ignore" ) {
+        # Everything's fine
+    } else {
+        print STDERR "Error: wrong value '$opt_power_status' for option -powerstatus.\n";
+        exit 4;
+    }
+    $opt_power_status = "\U$opt_power_status";  # to uppercase
 }
 
 
@@ -78,7 +90,9 @@ if ( my $friendlyname = $response_json->{'Status'}->{'FriendlyName'}->[0] ) {
 # Wenn POWER nicht belegt ist, dann POWER1 versuchen
 my $powerstatus = $response_json->{'StatusSTS'}->{'POWER'} // $response_json->{'StatusSTS'}->{'POWER1'};
 $powerstatus = "\U$powerstatus";  # to uppercase
-if ( $powerstatus ne "ON" ) {
+if ( $opt_power_status eq "IGNORE" ) {
+    push @additional, "[OK] Power status is $powerstatus (ignored)";
+} elsif ( $powerstatus ne $opt_power_status ) {
     $crit_count++;
     push @additional, "[CRITICAL] Power status is $powerstatus";
 } else {
@@ -159,10 +173,15 @@ sub print_help() {
              Critical when today's energy exceeds 1.2 kWh,
              or when device state is OFF
 
+    Example: $0 --powerstatus ignore
+             Just return results, ignore device state
+
+
     Parameters:
 
         -h, --help         Show this help text
         -v, --verbose      Verbose output (for debugging)
+        -s, --powerstatus  Check power status (on, off, ignore, default: $opt_power_status)
         --max1day ENERGY   Limit the today's energy
 
     END
