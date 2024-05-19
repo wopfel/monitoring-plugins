@@ -149,6 +149,11 @@ if ( defined $version ) {
     push @additional, "Version $version";
 }
 
+# Current power
+my $power = $response_json->{'StatusSNS'}->{'ENERGY'}->{'Power'};
+$answer .= "$power W now. ";
+push @perfdata, "power=$power";
+
 
 ###
 
