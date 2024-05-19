@@ -44,6 +44,11 @@ object CheckCommand "delock" {
         description = "Max. energy for 1 day in kWh"
         value = "$delock_max1day$"
     }
+    "--powerstatus" = {
+        set_if = {{ string(macro("$delock_powerstatus$")) != "" }}
+        description = "Desired power status: on, off, or ignore"
+        value = "$delock_powerstatus$"
+    }
   }
 }
 ```
@@ -69,6 +74,7 @@ object Host "delock-hauswasserpumpe-keller" {
   address = "192.168.209.8"
 
   vars.delock_max1day = 0.200
+  vars.delock_powerstatus = "ignore"
 }
 ```
 
