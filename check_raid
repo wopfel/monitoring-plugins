@@ -41,14 +41,24 @@ if ( $mdadm_out =~ /^ *State : clean *$/m  and  $mdadm_out =~ /^ *Active Devices
     exit 0;
 }
 
-
-my $mdadm_out = `cat /proc/mdstat`;
-
-if ( $mdadm_out =~ /recovery = ([\d.]+)%/ ) {
-    my $recovery_pct = $1;
-    submit_result( 1, "RAID recovering at $recovery_pct %", "recovery=$recovery_pct%" );
+if ( $mdadm_out =~ /^ *State : clean, degraded *$/m ) {
+    submit_result( 1, "RAID is clean, degraded", "" );
     exit 0;
 }
+
+if ( $mdadm_out =~ /^ *State : clean, degraded, recovering *$/m  and  $mdadm_out =~ /^ *Active Devices : 1$/m ) {
+    my ( $pct ) = $mdadm_out =~ /^ *Rebuild Status : (\d+)% complete$/m;
+    submit_result( 1, "RAID is recovering, $pct % complete", "recovery=$pct%" );
+    exit 0;
+}
+
+if ( $mdadm_out =~ /^ *State : inactive *$/m ) {
+    submit_result( 2, "RAID is inactive", "" );
+    exit 0;
+}
+
+
+# No match so far? Return unknown result
 
 submit_result( 3, "Unknown", "" );
 die $mdadm_out;
@@ -129,3 +139,24 @@ die $mdadm_out;
 #     Number   Major   Minor   RaidDevice State
 #        2       8       16        0      active sync   /dev/sdb
 #        1       8       32        1      active sync   /dev/sdc
+
+
+# Sample output when inactive, only 1 device present
+
+# root@backup7:~# mdadm --detail /dev/md0
+# /dev/md0:
+#            Version : 1.2
+#         Raid Level : raid0
+#      Total Devices : 1
+#        Persistence : Superblock is persistent
+#
+#              State : inactive
+#    Working Devices : 1
+#
+#               Name : backup7:0  (local to host backup7)
+#               UUID : 9368b423:542fb2e5:bdf19812:0ac35b4b
+#             Events : 15612
+#
+#     Number   Major   Minor   RaidDevice
+#
+#        -       8       16        -        /dev/sdb
