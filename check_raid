@@ -31,6 +31,17 @@ sub submit_result {
 }
 
 
+
+# Get state
+
+my $mdadm_out = `mdadm --detail /dev/md0`;
+
+if ( $mdadm_out =~ /^ *State : clean *$/m  and  $mdadm_out =~ /^ *Active Devices : 2$/m ) {
+    submit_result( 0, "RAID is clean, 2 active devices", "" );
+    exit 0;
+}
+
+
 my $mdadm_out = `cat /proc/mdstat`;
 
 if ( $mdadm_out =~ /recovery = ([\d.]+)%/ ) {
