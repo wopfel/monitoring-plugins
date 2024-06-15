@@ -44,3 +44,37 @@ die $mdadm_out;
 
 
 #curl -k -s -S -i -u USER:PASSWORD -H 'Accept: application/json'  -X POST 'https://icinga.lan:5665/v1/actions/process-check-result' -d '{ "type": "Service", "filter": "host.name==\"OBJHOSTNAME\" && service.name==\"OBJSERVICENAME\"", "exit_status": 2, "plugin_output": "PING CRITICAL - Packet loss = 100%", "performance_data": [ "rta=5000.000000ms;3000.000000;5000.000000;0.000000", "pl=100%;80;100;0" ], "check_source": "check-script", "pretty": true }'
+
+# Sample output of mdadm during rebuild:
+#
+# root@backup7:~# mdadm --detail /dev/md0
+# /dev/md0:
+#            Version : 1.2
+#      Creation Time : Sun Apr 23 14:41:14 2023
+#         Raid Level : raid1
+#         Array Size : 976630464 (931.39 GiB 1000.07 GB)
+#      Used Dev Size : 976630464 (931.39 GiB 1000.07 GB)
+#       Raid Devices : 2
+#      Total Devices : 2
+#        Persistence : Superblock is persistent
+#
+#      Intent Bitmap : Internal
+#
+#        Update Time : Sat Jun 15 16:39:53 2024
+#              State : clean, degraded, recovering
+#     Active Devices : 1
+#    Working Devices : 2
+#     Failed Devices : 0
+#      Spare Devices : 1
+#
+# Consistency Policy : bitmap
+#
+#     Rebuild Status : 63% complete
+#
+#               Name : backup7:0  (local to host backup7)
+#               UUID : 9368b423:542fb2e5:bdf19812:0ac35b4b
+#             Events : 14803
+#
+#     Number   Major   Minor   RaidDevice State
+#        2       8       16        0      spare rebuilding   /dev/sdb
+#        1       8       32        1      active sync   /dev/sdc
