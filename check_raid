@@ -1,0 +1,46 @@
+#!/usr/bin/perl
+
+# A lot of TODOs here
+# - Checks only the first device
+# - Fixed Icinga host name
+# - Fixed host/service name
+# - Checks only for recovery process in the RAID
+# - Uses curl
+
+use strict;
+use warnings;
+
+
+# root@backup7:~# cat /proc/mdstat
+# Personalities : [linear] [multipath] [raid0] [raid1] [raid6] [raid5] [raid4] [raid10]
+# md0 : active raid1 sdb[2] sdc[1]
+#       976630464 blocks super 1.2 [2/1] [_U]
+#       [======>..............]  recovery = 32.9% (322075840/976630464) finish=89.2min speed=122298K/sec
+#       bitmap: 5/8 pages [20KB], 65536KB chunk
+#
+# unused devices: <none>
+
+sub submit_result {
+    my $status = shift;
+    my $output = shift;
+    my $perfdata = shift;
+
+    my $curl_out = `curl -k -s -S -i -u USER:PASSWORD -H 'Accept: application/json'  -X POST 'https://icinga.lan:5665/v1/actions/process-check-result' -d '{ "type": "Service", "filter": "host.name==\\"backup7.lan\\" && service.name==\\"raid /dev/md0\\"", "exit_status": $status, "plugin_output": "$output", "performance_data": [ "$perfdata" ], "check_source": "check-script", "pretty": true }'`;
+
+    print $curl_out;
+}
+
+
+my $mdadm_out = `cat /proc/mdstat`;
+
+if ( $mdadm_out =~ /recovery = ([\d.]+)%/ ) {
+    my $recovery_pct = $1;
+    submit_result( 1, "RAID recovering at $recovery_pct %", "recovery=$recovery_pct%" );
+    exit 0;
+}
+
+submit_result( 3, "Unknown", "" );
+die $mdadm_out;
+
+
+#curl -k -s -S -i -u USER:PASSWORD -H 'Accept: application/json'  -X POST 'https://icinga.lan:5665/v1/actions/process-check-result' -d '{ "type": "Service", "filter": "host.name==\"OBJHOSTNAME\" && service.name==\"OBJSERVICENAME\"", "exit_status": 2, "plugin_output": "PING CRITICAL - Packet loss = 100%", "performance_data": [ "rta=5000.000000ms;3000.000000;5000.000000;0.000000", "pl=100%;80;100;0" ], "check_source": "check-script", "pretty": true }'
