@@ -78,3 +78,43 @@ die $mdadm_out;
 #     Number   Major   Minor   RaidDevice State
 #        2       8       16        0      spare rebuilding   /dev/sdb
 #        1       8       32        1      active sync   /dev/sdc
+
+
+# Sample output when in sync:
+
+# root@backup7:~# cat /proc/mdstat
+# Personalities : [linear] [multipath] [raid0] [raid1] [raid6] [raid5] [raid4] [raid10]
+# md0 : active raid1 sdb[2] sdc[1]
+#       976630464 blocks super 1.2 [2/2] [UU]
+#       bitmap: 0/8 pages [0KB], 65536KB chunk
+#
+# unused devices: <none>
+# root@backup7:~# mdadm --detail /dev/md0
+# /dev/md0:
+#            Version : 1.2
+#      Creation Time : Sun Apr 23 14:41:14 2023
+#         Raid Level : raid1
+#         Array Size : 976630464 (931.39 GiB 1000.07 GB)
+#      Used Dev Size : 976630464 (931.39 GiB 1000.07 GB)
+#       Raid Devices : 2
+#      Total Devices : 2
+#        Persistence : Superblock is persistent
+#
+#      Intent Bitmap : Internal
+#
+#        Update Time : Sat Jun 15 17:46:09 2024
+#              State : clean
+#     Active Devices : 2
+#    Working Devices : 2
+#     Failed Devices : 0
+#      Spare Devices : 0
+#
+# Consistency Policy : bitmap
+#
+#               Name : backup7:0  (local to host backup7)
+#               UUID : 9368b423:542fb2e5:bdf19812:0ac35b4b
+#             Events : 15612
+#
+#     Number   Major   Minor   RaidDevice State
+#        2       8       16        0      active sync   /dev/sdb
+#        1       8       32        1      active sync   /dev/sdc
