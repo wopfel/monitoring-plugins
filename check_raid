@@ -55,7 +55,7 @@ if ( $mdadm_out =~ /^ *State : clean, degraded, recovering *$/m  and  $mdadm_out
 # After resizing the raid
 if ( $mdadm_out =~ /^ *State : clean, resyncing *$/m  and  $mdadm_out =~ /^ *Active Devices : 2$/m ) {
     my ( $pct ) = $mdadm_out =~ /^ *Resync Status : (\d+)% complete$/m;
-    submit_result( 1, "RAID is resyncing, $pct % complete", "recovery=$pct%" );
+    submit_result( 1, "RAID is clean and resyncing, $pct % complete", "recovery=$pct%" );
     exit 0;
 }
 
