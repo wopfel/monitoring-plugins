@@ -1,10 +1,8 @@
 #!/usr/bin/perl
 
 # A lot of TODOs here
-# - Checks only the first device
 # - Fixed Icinga host name
 # - Fixed host/service name
-# - Checks only for recovery process in the RAID
 # - Uses curl
 
 use strict;
