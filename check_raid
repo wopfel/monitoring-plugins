@@ -59,6 +59,13 @@ if ( $mdadm_out =~ /^ *State : clean, resyncing *$/m  and  $mdadm_out =~ /^ *Act
     exit 0;
 }
 
+# After resizing the raid / also, this one here
+if ( $mdadm_out =~ /^ *State : active, resyncing *$/m  and  $mdadm_out =~ /^ *Active Devices : 2$/m ) {
+    my ( $pct ) = $mdadm_out =~ /^ *Resync Status : (\d+)% complete$/m;
+    submit_result( 1, "RAID is active and resyncing, $pct % complete", "recovery=$pct%" );
+    exit 0;
+}
+
 if ( $mdadm_out =~ /^ *State : inactive *$/m ) {
     submit_result( 2, "RAID is inactive", "" );
     exit 0;
