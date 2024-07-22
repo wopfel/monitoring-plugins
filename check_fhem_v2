@@ -83,6 +83,8 @@ if ( $opt_item eq "heizkoerperthermostate" ) {
     check_mqttclient();
 } elsif ( $opt_item eq "fensterkontakt" ) {
     check_fensterkontakt();
+} elsif ( $opt_item eq "fhem2fhem" ) {
+    check_fhem2fhem();
 } else {
     print STDERR "Error: invalid option --item given.\n";
     exit 4;
@@ -361,6 +363,58 @@ sub check_fensterkontakt {
     } else {
         $warn_count++;
         $answer .= "nur $device_ok von $device_count haben Batterie=ok. ";
+    }
+
+}
+
+
+
+
+
+#
+# Check if the state of Fhem2fhem is connected
+#
+
+sub check_fhem2fhem {
+
+    $ua = LWP::UserAgent->new;
+    my $url = "http://$opt_host:8083/fhem?cmd=jsonlist2%20Fhem2Fhem_pvtasks&XHR=1";
+    $response = $ua->post( $url, [ 'fwcsrf' => $token ] );
+    my $json = $response->decoded_content;
+
+    print Dumper( $json )  if  $opt_verbose;
+
+    my $response_json = decode_json( $json );
+
+    print Dumper( $response_json )  if  $opt_verbose;
+
+    my $device_count = 0;
+    my $device_ok = 0;
+
+    for my $device ( @{ $response_json->{'Results'} } ) {
+
+        $device_count++;
+
+        print Dumper( $device )  if  $opt_verbose;
+        my $name = $device->{'Name'};
+        my $state_value = $device->{'Internals'}->{'STATE'};
+        print "# Name=$name, StateValue=$state_value.\n"  if  $opt_verbose;
+
+        if ( $state_value eq "connected" ) {
+            $device_ok++;
+            push @additional, "[OK] Device '$name' is connected";
+        } else {
+            $warn_count++;
+            push @additional, "[WARNING] Device '$name' is not connected";
+        }
+
+    }
+
+    if ( $device_count == $device_ok ) {
+        $answer .= "Alle Fhem-Devices ok. ";
+    } else {
+        $warn_count++;
+        $answer .= "nur $device_ok von $device_count haben STATE=connected. ";
     }
 
 }
