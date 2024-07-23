@@ -64,7 +64,7 @@ my $response = $ua->get( "http://$opt_host:8083/" );
 my $token = $response->header('X-FHEM-csrfToken');
 
 unless ( $response->is_success ) {
-    print "UNKNOWN: $response->status_line";
+    print "UNKNOWN: " . $response->status_line;
     exit 3;
 }
 
