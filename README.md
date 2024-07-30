@@ -210,6 +210,13 @@ apply Service "pihole updates" {
 }
 ```
 
+Sample output:
+
+```
+# /usr/local/bin/check_pihole_updates
+Pi-Hole: 0 update(s) available. | updates=0 core= webui= ftl=
+```
+
 
 ## check_proxmox_lv
 
