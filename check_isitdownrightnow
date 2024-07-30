@@ -1,6 +1,6 @@
-#! /usr/bin/perl -w
+#!/usr/bin/perl
 
-# check_isitdownrightnow.pl     Copyright (C) 2014 Bernd Arnold
+# check_isitdownrightnow.pl     Copyright (C) 2014-2024 Bernd Arnold
 #
 # ...
 #
@@ -21,85 +21,91 @@
 # Boston, MA 02111-1307, USA
 
 use strict;
-use English;
-use Getopt::Long;
-#use File::stat;
-use vars qw($PROGNAME);
-use lib "/usr/lib/monitoring-plugins/";
-use utils qw (%ERRORS &print_revision &support);
+use warnings;
 require LWP::UserAgent;
+use Getopt::Long;
 
 
-sub print_help ();
-sub print_usage ();
+# Sub routines
+sub print_help();
 
-my ($opt_h, $opt_V);
-my ($result, $message, $age, $size, $st, $site);
+#my $opt_host;
+my $opt_help;
+my $opt_site;
+#, $opt_V);
+#my ($result, $message, $age, $size, $st, $site);
 
-$PROGNAME="check_isitdownrightnow";
+my $answer = "";
+my $crit_count = 0;
+my $warn_count = 0;
+my $status = "Unknown";
+my @perfdata = ();
+my @additional = ();
 
-Getopt::Long::Configure('bundling');
+
+#
+# Process command line options
+#
+
 GetOptions(
-    "s=s"   => \$site,  "site=s"    => \$site,
-    "V"     => \$opt_V, "version"   => \$opt_V,
-    "h"     => \$opt_h, "help"      => \$opt_h,
-);
+    "s|site=s"   => \$opt_site,
+    "h|help"     => \$opt_help,
+)
+or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 4; };
 
-if ( $opt_V ) {
-    print_revision($PROGNAME, '##TODO##');
-    exit $ERRORS{'UNKNOWN'};
-}
 
-if ( $opt_h ) {
+if ( $opt_help ) {
     print_help();
-    exit $ERRORS{'UNKNOWN'};
+    exit 4;  # Outside of the official monitoring plugin's exit codes
 }
 
-if ( ! $site ) {
-    print_help();
-    exit $ERRORS{'UNKNOWN'};
+if ( ! $opt_site ) {
+    print STDERR "Error: option -site missing.\n";
+    exit 4;
 }
 
-if ( $site !~ /^[-_0-9.A-Za-z]+$/ ) {
-    print "Error: Illegal characters in '$site'!\n";
-    print_help();
-    exit $ERRORS{'UNKNOWN'};
+if ( $opt_site !~ /^[-_0-9.A-Za-z]+$/ ) {
+    print STDERR "Error: Illegal characters in '$opt_site'!\n";
+    exit 4;
 }
 
-#####
+
+#
+# Get status
+#
 
 my $ua = LWP::UserAgent->new;
 $ua->timeout(10);
 $ua->agent('Mozilla/5.0');
- 
+
 # Check manually:
 # curl 'http://www.isitdownrightnow.com/check.php?domain=google.com'
 
-my $url = "http://www.isitdownrightnow.com/check.php?domain=$site";
+my $url = "https://www.isitdownrightnow.com/check.php?domain=$opt_site";
 
 #print "<<$url>>\n";
 
 my $response = $ua->get( $url );
- 
+
 if ( ! $response->is_success ) {
     print "UNKNOWN: Could not fetch info from isitdownrightnow.\n";
-    exit $ERRORS{UNKNOWN};
+    exit 3;  # UNKNOWN
 }
 
 # Sample result OK:
-# <div class="tabletr" style="height:40px;"><span class="upicon">UP</span><div class="statusup">Google.com is UP and reachable.</div>The website is probably down just for you...</div>
+# <div class="tabletr" style="height:40px;"><span class="upicon">UP</span><div class="statusup">Google.com is UP and reachable by us.</div>Please check and report on local outages below ...</div>
 
 # Sample result DOWN:
-# <div class="tabletr" style="height:40px;"><span class="downicon">DOWN</span><div class="statusdown">Dnsdynamic.com is DOWN  for everyone.</div>It is not just you. The server is not responding...</div>
+# #TODO
 
 my $output = $response->content;
 
 #print "Output: >> $output\n";
 
-if ( $output =~ m{<span class="upicon">UP</span><div class="statusup">\S+ is UP and reachable.</div>} ) {
-    print "OK: Site '$site' is up and reachable according to isitdownrightnow.com. ";
+if ( $output =~ m{<span class="upicon">UP</span><div class="statusup">\S+ is UP and reachable by us\.</div>} ) {
+    print "OK: Site '$opt_site' is up and reachable according to isitdownrightnow.com. ";
     # Get performance data
-    # <div class="tabletr"><span class="tab">184.21 ms.</span><b>Response Time:</b></div>
+    # <div class="tabletr"><span class="tab">2.23 ms.</span><b>Response Time:</b></div>
     if ( $output =~ m{<span class="tab">([\d.]+ ms)\.</span><b>Response Time:</b>} ) {
         my $perfdata = $1;
         # Remove blank
@@ -107,7 +113,7 @@ if ( $output =~ m{<span class="upicon">UP</span><div class="statusup">\S+ is UP 
         print "| response_time=$perfdata ";
     }
     print "\n";
-    exit $ERRORS{OK};
+    exit 0;  # OK
 }
 
 
@@ -115,32 +121,36 @@ if ( $output =~ m{<span class="upicon">UP</span><div class="statusup">\S+ is UP 
 
 my ( $msg ) = $output =~ m{<div class="status\S+">(.*?)</div>};
 
-print "WARNING: Site '$site' seems to be down according to isitdownrightnow.com. Message: $msg.\n";
-exit $ERRORS{WARNING};
+print "WARNING: Site '$opt_site' seems to be down according to isitdownrightnow.com. Message: $msg.\n";
+exit 1;  # WARNING
 
 
 # Should be never reached
-exit $ERRORS{UNKNOWN};
+exit 3;  # UNKNOWN
 
 
 
 
 
-sub print_usage () {
-        print "Usage:\n";
-        print "  $PROGNAME\n";
-        print "            [-h | --help]\n";
-        print "            [-V | --version]\n";
-        print "            [-s | --site]  example.org  (without www.)\n";
-}
+#
+# Print help
+#
 
 sub print_help () {
-        # No official plugin ;-)
-        #print_revision($PROGNAME, '##TODO');
-        print "Copyright (C) 2014 Bernd Arnold\n\n";
-        print_usage();
-        print "\n";
-        # No official plugin ;-)
-        #support();
-}
 
+    print STDERR <<~"END"
+    Check a website's status on isitdownrightnow.com
+
+    Usage: $0 [--site SITE]
+
+    Example: $0 --site google.com
+             Warning when site is not reported as UP
+
+    Parameters:
+
+        -h, --help         Show this help text
+        -s, --site SITE    The site that should be checked
+
+    END
+
+}
