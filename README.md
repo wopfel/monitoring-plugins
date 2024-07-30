@@ -190,6 +190,27 @@ Raises UNKNOWN if the container is not found and CRITICAL if the container is no
 Requires root privileges (with sudo, for example).
 
 
+## check_pihole_updates
+
+Uses command `pihole -up --check-only` on the locally installed pihole.
+Returns whether there are any updates for core, web interface, or FTL.
+
+Service definition in Icinga2 using SSH:
+
+```
+apply Service "pihole updates" {
+  import "generic-service"
+
+  check_command = "by_ssh"
+
+  vars.by_ssh_command = [ "/usr/bin/sudo", "/usr/local/bin/check_pihole_updates" ]
+  vars.by_ssh_logname = "icinga"
+
+  assign where match("pihole*", host.name)
+}
+```
+
+
 ## check_proxmox_lv
 
 Checks the free space of a LVM logical volume. If you have a file system on an LV, you don't need this check script. You can use df based utilities for checking the file system (check_disk from the official monitoring-plugins, for example).

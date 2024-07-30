@@ -1,0 +1,40 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+# Sample output:
+# pihole2# pihole -up --check-only
+#   [i] Checking for updates...
+#   [i] Pi-hole Core:   update available
+#   [i] Web Interface:  update available
+#   [i] FTL:            update available
+
+my $output = qx'pihole -up --check-only';
+
+#print $output;
+
+# Updates available?
+my $ua_core  = $output =~ /Pi-hole Core:\s*update available/;
+my $ua_webui = $output =~ /Web Interface:\s*update available/;
+my $ua_ftl   = $output =~ /FTL:\s*update available/;
+
+my @updates;
+push @updates, "Core"   if  $ua_core;
+push @updates, "WebUI"  if  $ua_webui;
+push @updates, "FTL"    if  $ua_ftl;
+
+
+my $ua_sum = 0;
+for ( $ua_core, $ua_webui, $ua_ftl ) { $ua_sum++ if $_ }
+
+print "Pi-Hole: $ua_sum update(s) available";
+
+if ( $ua_sum > 0 ) {
+    print ": ";
+    print join ",", @updates;
+}
+
+print ". | updates=$ua_sum core=$ua_core webui=$ua_webui ftl=$ua_ftl\n";
+
+exit ( $ua_sum != 0 );
