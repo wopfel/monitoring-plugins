@@ -214,7 +214,7 @@ Sample output:
 
 ```
 # /usr/local/bin/check_pihole_updates
-Pi-Hole: 0 update(s) available. | updates=0 core= webui= ftl=
+Pi-Hole: 0 update(s) available. | updates=0 core=0 webui=0 ftl=0
 ```
 
 
