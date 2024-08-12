@@ -1,0 +1,171 @@
+#!/usr/bin/perl
+
+##################
+#
+#  Check a Brother Laser Printer
+#  Written for: Brother MFC-L3770CDW
+#
+#  Usage:   ...
+#
+#  Copyright (C) 2023 Bernd Arnold
+#  https://github.com/wopfel/monitoring-plugins
+#
+##################
+
+use strict;
+use warnings;
+require LWP::UserAgent;
+use Data::Dumper;
+use Getopt::Long;
+
+# Sub routines
+sub print_help();
+
+my $opt_verbose;
+my $opt_host;
+my $opt_help;
+
+my $answer = "";
+my $crit_count = 0;
+my $warn_count = 0;
+my $status = "Unknown";
+my @perfdata = ();
+my @additional = ();
+
+
+# Process command line options
+GetOptions( "h|hostname=s"       => \$opt_host,
+            "v|verbose"          => \$opt_verbose,
+            "help"               => \$opt_help,
+          )
+or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
+#or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 1; };
+
+if ( ! $opt_host ) {
+    print STDERR "Error: option -host missing.\n";
+    exit 4;
+}
+
+if ( $opt_help ) {
+    print_help();
+    exit 10;  # Outside of the official monitoring plugin's exit codes
+}
+
+
+my $ua = LWP::UserAgent->new;
+
+my $response = $ua->get( "http://$opt_host/etc/mnt_info.csv" );
+
+if ( $response->is_success ) {
+#     print $response->decoded_content;  # or whatever
+}
+else {
+    print "UNKNOWN: $response->status_line";
+    exit 3;
+}
+
+print Dumper( $response->decoded_content ) if $opt_verbose;
+
+my @lines = split /\n/, $response->decoded_content;
+print Dumper( \@lines ) if $opt_verbose;
+
+
+# First line is a header line
+#print $lines[0];
+my @headers = split /,/, $lines[0];
+print Dumper( \@headers ) if $opt_verbose;
+
+# Second line contains data
+my @values = split /,/, $lines[1];
+print Dumper( \@values ) if $opt_verbose;
+
+my $splitcount_header = scalar @headers;
+my $splitcount_values = scalar @values;
+
+if ( $splitcount_header != $splitcount_values ) {
+	print "UNKNOWN: Wrong count in headers/values: $splitcount_header vs. $splitcount_values.\n";
+	exit 3;
+}
+
+my %data;
+
+for my $i ( 0 .. $#headers ) {
+	my $header = $headers[$i];
+	my $value  = $values[$i];
+	# Remove "
+	$header =~ s/"//g;
+	$value  =~ s/"//g;
+
+	$data{ $header } = $value;
+	#print $i;
+}
+
+print Dumper( \%data ) if $opt_verbose;
+
+
+for my $toner ( qw/ Cyan Magenta Yellow Black / ) {
+	my $fill = $data{"% of Life Remaining(Toner $toner)"};
+	if ( $fill < 20 ) {
+	        $warn_count++;
+        	push @additional, "[WARNING] Toner $toner $fill %.";
+	} else {
+        	push @additional, "[OK] Toner $toner $fill %.";
+	}
+}
+
+$answer .= "$data{'Total'} Seiten total. ";
+
+push @perfdata, "paper_jams=$data{'Total Paper Jams'}";
+push @perfdata, "total=$data{'Total'}";
+
+push @perfdata, "toner_cyan=$data{'% of Life Remaining(Toner Cyan)'}%";
+push @perfdata, "toner_magenta=$data{'% of Life Remaining(Toner Magenta)'}%";
+push @perfdata, "toner_yellow=$data{'% of Life Remaining(Toner Yellow)'}%";
+push @perfdata, "toner_black=$data{'% of Life Remaining(Toner Black)'}%";
+
+
+###
+
+if ( $crit_count ) {
+    $status = "Critical";
+} elsif ( $warn_count ) {
+    $status = "Warning";
+} else {
+    $status = "Ok";
+}
+
+print "$status: ";
+print "$answer\n";
+
+print "| " . join(" ", @perfdata) . "\n"  if @perfdata;
+print join("\n", @additional) . "\n"  if @additional;
+
+exit 2 if $status eq "Critical";
+exit 1 if $status eq "Warning";
+exit 0 if $status eq "Ok";
+exit 3; # 'Unknown' return code
+
+
+
+#
+# Print help
+#
+
+sub print_help() {
+
+    print STDERR <<~"END"
+    Check Brother laser printer state.
+
+    Usage: $0
+
+    Example: $0
+             Warning when toner fill is less than 20 %.
+
+    Parameters:
+
+        -h, --help         Show this help text
+        -v, --verbose      Verbose output (for debugging)
+
+    END
+
+}
