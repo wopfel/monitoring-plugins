@@ -60,7 +60,7 @@ if ( $response->is_success ) {
 #     print $response->decoded_content;  # or whatever
 }
 else {
-    print "UNKNOWN: $response->status_line";
+    print "UNKNOWN: " . $response->status_line;
     exit 3;
 }
 
