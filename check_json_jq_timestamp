@@ -1,9 +1,9 @@
 #!/bin/perl
 
 # Quick-and-dirty at the moment
-# Uses curl and jq on command line
+# Uses jq for parsing json
 
-# Retrieve a json file, and checks if the date variable is not older than 120 seconds
+# Retrieve a json file, and check if the date variable is not older than 120 seconds
 # out.json:
 # {
 #     "date": "2024-09-08T15:07:13Z",
