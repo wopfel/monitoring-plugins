@@ -1,0 +1,47 @@
+#!/bin/perl
+
+# Quick-and-dirty at the moment
+# Uses curl and jq on command line
+
+# Retrieve a json file, and checks if the date variable is not older than 120 seconds
+# out.json:
+# {
+#     "date": "2024-09-08T15:07:13Z",
+#     ...
+# }
+
+
+use strict;
+use warnings;
+use IPC::Run qw(run);
+
+# developed on command line:
+# curl https://server/out.json | jq -r '(now - (.date | fromdate)) as $age | if $age > 3600 then "CRITICAL: older than 1 hour: \(.date)" elif $age > 120 then "WARNING: older than 120 seconds: \(.date)" else "OK: younger than 120 seconds: \(.date)" end'
+
+
+my $curlout = qx{ curl -s https://server/out.json };
+
+#print $curlout;
+
+my ($out, $err);
+
+my $jqcmd = q# (now - (.date | fromdate)) as $age | if $age > 3600 then "CRITICAL: older than 1 hour: \(.date)" elif $age > 120 then "WARNING: older than 120 seconds: \(.date)" else "OK: younger than 120 seconds: \(.date)" end | . + " | age=\($age|round)s" #;
+ 
+run [ 'jq', '-r', $jqcmd ], \$curlout, \$out, \$err;
+
+#print $out;
+
+if ( $out =~ /^OK: / ) {
+    print $out;
+    exit 0;
+} elsif ( $out =~ /^WARNING: / ) {
+    print $out;
+    exit 1;
+} elsif ( $out =~ /^CRITICAL: / ) {
+    print $out;
+    exit 2;
+} else {
+    print $out;
+    exit 3;
+}
+
