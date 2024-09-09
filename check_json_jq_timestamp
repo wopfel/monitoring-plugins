@@ -18,8 +18,9 @@ use IPC::Run qw(run);
 # developed on command line:
 # curl https://server/out.json | jq -r '(now - (.date | fromdate)) as $age | if $age > 3600 then "CRITICAL: older than 1 hour: \(.date)" elif $age > 120 then "WARNING: older than 120 seconds: \(.date)" else "OK: younger than 120 seconds: \(.date)" end'
 
+my $url = $ARGV[0];
 
-my $curlout = qx{ curl -s https://server/out.json };
+my $curlout = qx{ curl -s $url };
 
 #print $curlout;
 
