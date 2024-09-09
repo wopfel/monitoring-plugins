@@ -13,6 +13,7 @@
 
 use strict;
 use warnings;
+require LWP::UserAgent;
 use IPC::Run qw(run);
 
 # developed on command line:
@@ -20,7 +21,16 @@ use IPC::Run qw(run);
 
 my $url = $ARGV[0];
 
-my $curlout = qx{ curl -s $url };
+my $ua = LWP::UserAgent->new;
+
+my $response = $ua->get( $url );
+
+if ( ! $response->is_success ) {
+    print "UNKNOWN: $response->status_line";
+    exit 3;
+}
+
+my $curlout = $response->decoded_content;
 
 #print $curlout;
 
