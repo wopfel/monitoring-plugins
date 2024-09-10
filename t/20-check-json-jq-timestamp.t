@@ -24,8 +24,8 @@ $output = `perl ./check_json_jq_timestamp http://localhost:8000/$filename 2>&1`;
 
 is( $?, 0, "Good return code." );
 like $output, qr/^OK: younger than/;
-like $output, qr/| age=\d+s$/, "Perfdata age having a number";
-like $output, qr/| age=[0-5]s$/, "Perfdata should return less or equal 5 seconds";
+like $output, qr/\| age=\d+s$/, "Perfdata age having a number";
+like $output, qr/\| age=[0-5]s$/, "Perfdata should return less or equal 5 seconds";
 
 print "# $output";
 
@@ -47,8 +47,8 @@ $output = `perl ./check_json_jq_timestamp http://localhost:8000/$filename 2>&1`;
 
 is( $? >> 8, 1, "Good return code." );
 like $output, qr/^WARNING: older than 120 seconds/;
-like $output, qr/| age=\d+s$/, "Perfdata age having a number";
-like $output, qr/| age=18\ds$/, "Perfdata should return about 180 seconds";
+like $output, qr/\| age=\d+s$/, "Perfdata age having a number";
+like $output, qr/\| age=18\ds$/, "Perfdata should return about 180 seconds";
 
 print "# $output";
 
@@ -70,8 +70,8 @@ $output = `perl ./check_json_jq_timestamp http://localhost:8000/$filename 2>&1`;
 
 is( $? >> 8, 2, "Good return code." );
 like $output, qr/^CRITICAL: older than 1 hour: /;
-like $output, qr/| age=\d+s$/, "Perfdata age having a number";
-like $output, qr/| age=17280\ds$/, "Perfdata should return about 172800 seconds";
+like $output, qr/\| age=\d+s$/, "Perfdata age having a number";
+like $output, qr/\| age=17280\ds$/, "Perfdata should return about 172800 seconds";
 
 print "# $output";
 
