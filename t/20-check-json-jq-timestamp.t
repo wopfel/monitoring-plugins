@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 6;
+plan tests => 9;
 
 my $output;
 my @output;
@@ -46,6 +46,28 @@ $output = `perl ./check_json_jq_timestamp http://localhost:8000/$filename 2>&1`;
 
 is( $? >> 8, 1, "Good return code." );
 like $output, qr/^WARNING: older than 120 seconds/;
+like $output, qr/| age=\d+s$/, "Perfdata age having a number";
+
+print "# $output";
+
+unlink "./t/testdata/$filename";
+
+
+###
+
+# A very old timestamp should return CRITICAL
+
+$filename = "jsonjq-veryold.json";
+
+open FILE, ">", "./t/testdata/$filename"  or  die;
+my $oldjson = `jo date=\$(date --utc -d "2 days ago" "+%Y-%m-%dT%H:%M:%SZ") otherdata1=some otherdata2=other otherdata3=data`;
+print FILE $oldjson;
+close FILE  or  die;
+
+$output = `perl ./check_json_jq_timestamp http://localhost:8000/$filename 2>&1`;
+
+is( $? >> 8, 2, "Good return code." );
+like $output, qr/^CRITICAL: older than 1 hour: /;
 like $output, qr/| age=\d+s$/, "Perfdata age having a number";
 
 print "# $output";
