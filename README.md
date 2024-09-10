@@ -312,6 +312,11 @@ cd ./t/testdata
 python3 -m http.server
 ```
 
+The tests need the following additional components:
+
+- jo
+- python3
+
 Then run the test: `prove t`.
 
 Sample output:
