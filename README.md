@@ -301,3 +301,27 @@ Ok: 2 GPIO ports found.
 ## TODO
 
 * Make check scripts customizable using Getopt::Long
+
+
+## Tests
+
+I've added a test for `check_json_jq_timestamp`. To run the test, start a basic http server:
+
+```
+cd ./t/testdata
+python3 -m http.server
+```
+
+Then run the test: `prove t`.
+
+Sample output:
+
+```
+t/20-check-json-jq-timestamp.t .. ok
+All tests successful.
+Files=1, Tests=2,  0 wallclock secs ( 0.03 usr  0.00 sys +  0.18 cusr  0.01 csys =  0.22 CPU)
+Result: PASS
+```
+
+After running the test, stop the python http server (Ctrl+C or similar).
+
