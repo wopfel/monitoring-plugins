@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # Erstellt 19.09.2022, Bernd Arnold
-# Getestet mit einer APC USV Pro 900
+# Getestet mit einer Eaton Ellipse PRO 1200
 
 use strict;
 use warnings;
