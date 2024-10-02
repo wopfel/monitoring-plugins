@@ -75,6 +75,7 @@ for my $line ( @output ) {
 
 
 $perfdata .= "inputvoltage=" . $upsdata{'input.voltage'} . " "  if  defined $upsdata{'input.voltage'};
+$perfdata .= "batteryvoltage=" . $upsdata{'battery.voltage'} . " "  if  defined $upsdata{'battery.voltage'};
 $perfdata .= "upspower=" . $upsdata{'ups.power'} . " "  if  defined $upsdata{'ups.power'};
 
 
