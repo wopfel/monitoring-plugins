@@ -104,7 +104,10 @@ if ( $usvstatus ne "OL" ) {
         $errorcount++;
 }
 
-print "USV-Status $usvstatus. ";
+print "USV-Status: ";
+if ( $usvstatus eq "OL" ) { print "on line ($usvstatus). " }
+elsif ( $usvstatus eq "OB" ) { print "on battery ($usvstatus). " }
+else { print "$usvstatus. " }
 
 print $upsdata{'battery.charge'} . " % charged. "  if  defined $upsdata{'battery.charge'};
 
