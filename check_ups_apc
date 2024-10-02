@@ -52,6 +52,11 @@ my @addinfo = ();
 
 my @output = `apcaccess status`;
 
+if ( $? != 0 ) {
+	print "Error when calling apcaccess.\n";
+	exit 3;
+}
+
 my %upsdata;
 
 for my $line ( @output ) {
