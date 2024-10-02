@@ -100,6 +100,8 @@ if ( $usvstatus ne "OL" ) {
 
 print "USV-Status $usvstatus. ";
 
+print $upsdata{'battery.charge'} . " % charged. "  if  defined $upsdata{'battery.charge'};
+
 print "| $perfdata"  if  $perfdata;
 
 print "\n";
