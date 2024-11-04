@@ -78,6 +78,13 @@ print Dumper( $update_count_modules )  if  $opt_verbose;
 my $update_count_main = scalar grep /^UPD \.\/fhem\.pl$/, split /\n/, $output;
 print Dumper( $update_count_main )  if  $opt_verbose;
 
+# nothing to do...
+if ( $update_count == 0 and $output !~ /^nothing to do\.\.\.$/m ) {
+    # Ensure the message appears when no updates found
+    print "UNKNOWN: No updates found, but message 'nothing to do' missing.\n";
+    exit 3;
+}
+
 ##
 
 $answer .= "Main Fhem program needs update. "  if  $update_count_main;
