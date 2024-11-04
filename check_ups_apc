@@ -50,6 +50,28 @@ my @addinfo = ();
 # FIRMWARE : 879.L4 .I USB FW:L4
 # END APC  : 2022-09-19 17:40:03 +0200
 
+# When communication is lost:
+# # apcaccess status
+# APC      : 001,018,0441
+# DATE     : 2024-11-03 22:07:42 +0100
+# HOSTNAME : proxmox4
+# VERSION  : 3.14.14 (31 May 2016) debian
+# UPSNAME  : APC900
+# CABLE    : USB Cable
+# DRIVER   : USB UPS Driver
+# UPSMODE  : Stand Alone
+# STARTTIME: 2024-11-03 22:07:32 +0100
+# STATUS   : COMMLOST
+# MBATTCHG : 5 Percent
+# MINTIMEL : 3 Minutes
+# MAXTIME  : 0 Seconds
+# NUMXFERS : 0
+# TONBATT  : 0 Seconds
+# CUMONBATT: 0 Seconds
+# XOFFBATT : N/A
+# STATFLAG : 0x05000100
+# END APC  : 2024-11-04 18:36:59 +0100
+
 my @output = `apcaccess status`;
 
 if ( $? != 0 ) {
@@ -70,6 +92,13 @@ for my $line ( @output ) {
 	$upsdata{ $item } = $value;
 
 }
+
+# STATUS   : COMMLOST
+if ( defined $upsdata{'STATUS'} and $upsdata{'STATUS'} eq "COMMLOST" ) {
+	print "UNKNOWN: Communication to UPS lost.\n";
+	exit 3;
+}
+
 
 #print @output;
 #print $upsdata{'LOADPCT'};
