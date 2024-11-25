@@ -1,0 +1,120 @@
+#!/usr/bin/perl
+
+##################
+#
+#  Check established TCP connections for port 1883 (mosquitto)
+#
+#  Usage:   ...
+#
+#  Be careful! Parameters are passed to the shell using qx//
+#
+#  Copyright (C) 2024 Bernd Arnold
+#  https://github.com/wopfel/monitoring-plugins
+#
+##################
+
+use strict;
+use warnings;
+use Data::Dumper;
+use Getopt::Long;
+
+# Sub routines
+sub print_help();
+
+my $opt_verbose;
+my $opt_help;
+
+my $answer = "";
+my $crit_count = 0;
+my $warn_count = 0;
+my $status = "Unknown";
+my @perfdata = ();
+my @additional = ();
+
+
+#
+# Process command line options
+#
+
+GetOptions( "v|verbose"          => \$opt_verbose,
+            "help"               => \$opt_help,
+          )
+or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 4; };
+
+if ( $opt_help ) {
+    print_help();
+    exit 4;  # Outside of the official monitoring plugin's exit codes
+}
+
+
+#
+# Query network
+#
+
+my $output = qx{ ss -ntp --no-header state established src :1883 };
+print Dumper( $output ) if $opt_verbose;
+
+my $count = 0;
+
+for my $line ( split /\n/, $output ) {
+    $count++;
+}
+
+$answer .= "$count connections. ";
+
+push @perfdata, "connections=$count";
+
+
+#
+# Check results
+#
+
+# TODO
+
+
+###
+
+if ( $crit_count ) {
+    $status = "Critical";
+} elsif ( $warn_count ) {
+    $status = "Warning";
+} else {
+    $status = "Ok";
+}
+
+print "$status: ";
+print "$answer\n";
+
+print "| " . join(" ", @perfdata) . "\n"  if @perfdata;
+print join("\n", @additional) . "\n"  if @additional;
+
+exit 2 if $status eq "Critical";
+exit 1 if $status eq "Warning";
+exit 0 if $status eq "Ok";
+exit 3;  # 'Unknown' return code
+
+
+
+#
+# Print help
+#
+
+sub print_help() {
+
+    print STDERR <<~"END"
+    Check established network connections on port 1883 (mosquitto)
+
+    Usage: $0
+
+    Example: $0
+             Just show the values
+
+
+    Parameters:
+
+        -h, --help         Show this help text
+        -v, --verbose      Verbose output (for debugging)
+
+    END
+
+}
