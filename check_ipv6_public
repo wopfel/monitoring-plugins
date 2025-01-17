@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+my $error_count = 0;
+my $warning_count = 0;
+
+my $output = qx/ ip -6 -o a show dev eth0 /;
+#print $output;
+
+my $total_ipv6_addresses = 0;
+my $public_ipv6_addresses = 0;
+
+for my $line ( split /\n/, $output ) {
+
+    #print "xxx $line\n";
+
+    $total_ipv6_addresses++;
+
+    # IPv6 addresses beginning with 'f' are private
+    $public_ipv6_addresses++  unless  $line =~ /^\d+: eth0\s+inet6 f...:/;
+
+}
+
+if ( $public_ipv6_addresses ) {
+    print "$public_ipv6_addresses public IPv6 addresses found. ";
+} else {
+    print "No public IPv6 addresses found. ";
+    $error_count++;
+}
+# icinga# ip -6 -o a show dev eth0
+# 2: eth0    inet6 fd00::xxxx:xxxx:xxxx:xxxx/64 scope global dynamic mngtmpaddr noprefixroute \       valid_lft 6950sec preferred_lft 3350sec
+# 2: eth0    inet6 fe80::xxxx:xxxx:xxxx:xxxx/64 scope link \       valid_lft forever preferred_lft forever
+
+if ( $error_count ) {
+    exit 2;
+} elsif ( $warning_count ) {
+    exit 1;
+} else {
+    exit 0;
+}
