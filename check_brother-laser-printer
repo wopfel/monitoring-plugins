@@ -54,7 +54,7 @@ if ( $opt_help ) {
 
 my $ua = LWP::UserAgent->new;
 
-my $response = $ua->get( "http://$opt_host/etc/mnt_info.csv" );
+my $response = $ua->get( "http://$opt_host/general/information.html" );
 
 if ( $response->is_success ) {
 #     print $response->decoded_content;  # or whatever
@@ -66,62 +66,42 @@ else {
 
 print Dumper( $response->decoded_content ) if $opt_verbose;
 
-my @lines = split /\n/, $response->decoded_content;
-print Dumper( \@lines ) if $opt_verbose;
+#
+# Extract data
+#
 
+#my ( $page_counter ) = $response->decoded_content =~ m{<h3>Device&#32;Status</h3><dl class="items"><dt>Page&#32;Counter</dt><dd>(\d+)</dd>};
+my ( $pages_total, $pages_color, $pages_bw ) = $response->decoded_content =~ m{<h3>Device&#32;Status</h3><dl class="items"><dt>Page&#32;Counter</dt><dd>(\d+)</dd><dt class="subhead"><span>Colour</span></dt><dd>(\d+)</dd><dt class="subhead"><span>B&amp;W</span></dt><dd>(\d+)</dd></dl>};
 
-# First line is a header line
-#print $lines[0];
-my @headers = split /,/, $lines[0];
-print Dumper( \@headers ) if $opt_verbose;
+my ( $paper_jams_total ) = $response->decoded_content =~ m{<dl class="items"><dt>Total&#32;Paper&#32;Jams</dt><dd>(\d+)</dd>};
 
-# Second line contains data
-my @values = split /,/, $lines[1];
-print Dumper( \@values ) if $opt_verbose;
-
-my $splitcount_header = scalar @headers;
-my $splitcount_values = scalar @values;
-
-if ( $splitcount_header != $splitcount_values ) {
-	print "UNKNOWN: Wrong count in headers/values: $splitcount_header vs. $splitcount_values.\n";
-	exit 3;
-}
-
-my %data;
-
-for my $i ( 0 .. $#headers ) {
-	my $header = $headers[$i];
-	my $value  = $values[$i];
-	# Remove "
-	$header =~ s/"//g;
-	$value  =~ s/"//g;
-
-	$data{ $header } = $value;
-	#print $i;
-}
-
-print Dumper( \%data ) if $opt_verbose;
+my ( $toner_cyan, $toner_magenta, $toner_yellow, $toner_black ) = $response->decoded_content =~ m{<dt>Toner&nbsp;Cyan&#32;\(C\)\*\*</dt><dd>(\d+)%</dd><dt>Toner&nbsp;Magenta&#32;\(M\)\*\*</dt><dd>(\d+)%</dd><dt>Toner&nbsp;Yellow&#32;\(Y\)\*\*</dt><dd>(\d+)%</dd><dt>Toner&nbsp;Black&#32;\(BK\)\*\*</dt><dd>(\d+)%</dd>};
 
 
 for my $toner ( qw/ Cyan Magenta Yellow Black / ) {
-	my $fill = $data{"% of Life Remaining(Toner $toner)"};
-	if ( $fill < 20 ) {
-	        $warn_count++;
-        	push @additional, "[WARNING] Toner $toner $fill %.";
-	} else {
-        	push @additional, "[OK] Toner $toner $fill %.";
-	}
+
+    my ( $fill ) = $response->decoded_content =~ m{<dt>Toner&nbsp;$toner&#32;\([CMYB]K?\)\*\*</dt><dd>(\d+)%</dd>};
+
+    print "<<< $toner -> $fill % >>>\n"  if  $opt_verbose;
+
+    if ( $fill < 20 ) {
+        $warn_count++;
+        push @additional, "[WARNING] Toner $toner $fill %.";
+    } else {
+        push @additional, "[OK] Toner $toner $fill %.";
+    }
+
 }
 
-$answer .= "$data{'Total'} Seiten total. ";
+$answer .= "$pages_total Seiten total. ";
 
-push @perfdata, "paper_jams=$data{'Total Paper Jams'}";
-push @perfdata, "total=$data{'Total'}";
+push @perfdata, "paper_jams=$paper_jams_total";
+push @perfdata, "total=$pages_total";
 
-push @perfdata, "toner_cyan=$data{'% of Life Remaining(Toner Cyan)'}%";
-push @perfdata, "toner_magenta=$data{'% of Life Remaining(Toner Magenta)'}%";
-push @perfdata, "toner_yellow=$data{'% of Life Remaining(Toner Yellow)'}%";
-push @perfdata, "toner_black=$data{'% of Life Remaining(Toner Black)'}%";
+push @perfdata, "toner_cyan=$toner_cyan%";
+push @perfdata, "toner_magenta=$toner_magenta%";
+push @perfdata, "toner_yellow=$toner_yellow%";
+push @perfdata, "toner_black=$toner_black%";
 
 
 ###
