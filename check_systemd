@@ -1,0 +1,123 @@
+#!/usr/bin/perl
+
+
+##################
+#
+#  Check systemd status
+#
+#  Usage:   ...
+#
+#  Copyright (C) 2025 Bernd Arnold
+#  #TODO https://github.com/wopfel/monitoring-plugins
+#
+##################
+
+
+use strict;
+use warnings;
+use JSON;
+use Data::Dumper;
+use Getopt::Long;
+
+#my $opt_host;
+#my $opt_item;
+my $opt_verbose;
+
+my $answer = "";
+my $crit_count = 0;
+my $warn_count = 0;
+my $status = "Unknown";
+my @perfdata = ();
+my @additional = ();
+
+
+# Process command line options
+GetOptions(
+            "v|verbose"      => \$opt_verbose,
+)
+    or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
+
+
+my $output = qx/ systemctl list-units --all --output json --no-page /;
+
+#TODO check return code
+#unless ( $response->is_success ) {
+#    print "UNKNOWN: " . $response->status_line;
+#    exit 3;
+#}
+
+print $output if $opt_verbose;
+
+print Dumper( $output )  if  $opt_verbose;
+
+
+
+my $json = decode_json( $output );
+
+print Dumper( $json )  if  $opt_verbose;
+
+my $count_active = 0;
+my $count_wrong = 0;
+
+for my $unit ( @{ $json } ) {
+
+    my $name = $unit->{'unit'};
+    if ( $unit->{'active'} eq "activating" ) {
+            $warn_count++;
+            push @additional, "[WARNING] Unit '$name' is activating";
+            $count_wrong++;
+    }
+
+    $count_active++  if  $unit->{'active'} eq "active";
+
+}
+
+$answer .= "$count_active active units. ";
+$answer .= "$count_wrong suspicious units. "  if  $count_wrong;
+
+#    for my $sensor ( @{ $response_json->{'Results'} } ) {
+#
+#        $device_count++;
+#
+#        my $name = $sensor->{'Name'};
+#        my $reachable = $sensor->{'Internals'}->{'reachable'} // 0;  # Set to 0 if reachable is not defined
+#
+#        if ( $reachable eq "1" ) {
+#            $device_ok++;
+#            push @additional, "[OK] Device '$name' reachable";
+#        } else {
+#            $warn_count++;
+#            push @additional, "[WARNING] Device '$name' not reachable";
+#        }
+#
+#    }
+#
+#    if ( $device_count == $device_ok ) {
+#        $answer .= "Alle Fhem-Devices reachable. ";
+#    } else {
+#        $warn_count++;
+#        $answer .= "nur $device_ok von $device_count sind reachable. ";
+#    }
+
+#
+# Build output
+#
+
+if ( $crit_count ) {
+    $status = "Critical";
+} elsif ( $warn_count ) {
+    $status = "Warning";
+} else {
+    $status = "Ok";
+}
+
+print "$status: ";
+print "$answer\n";
+
+print "| " . join(" ", @perfdata) . "\n"  if @perfdata;
+print join("\n", @additional) . "\n"  if @additional;
+
+exit 2 if $status eq "Critical";
+exit 1 if $status eq "Warning";
+exit 0 if $status eq "Ok";
+exit 3; # 'Unknown' return code
