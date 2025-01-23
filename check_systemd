@@ -110,29 +110,6 @@ push @additional, "Matched units: " . ( join ", ", @matched_units )  if  @matche
 $answer .= "$count_active active units. ";
 $answer .= "$count_wrong suspicious units. "  if  $count_wrong;
 
-#    for my $sensor ( @{ $response_json->{'Results'} } ) {
-#
-#        $device_count++;
-#
-#        my $name = $sensor->{'Name'};
-#        my $reachable = $sensor->{'Internals'}->{'reachable'} // 0;  # Set to 0 if reachable is not defined
-#
-#        if ( $reachable eq "1" ) {
-#            $device_ok++;
-#            push @additional, "[OK] Device '$name' reachable";
-#        } else {
-#            $warn_count++;
-#            push @additional, "[WARNING] Device '$name' not reachable";
-#        }
-#
-#    }
-#
-#    if ( $device_count == $device_ok ) {
-#        $answer .= "Alle Fhem-Devices reachable. ";
-#    } else {
-#        $warn_count++;
-#        $answer .= "nur $device_ok von $device_count sind reachable. ";
-#    }
 
 #
 # Build output
