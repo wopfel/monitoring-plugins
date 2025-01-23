@@ -19,10 +19,14 @@ use JSON;
 use Data::Dumper;
 use Getopt::Long;
 
+# Sub routines
+sub print_help();
+
 #my $opt_host;
 #my $opt_item;
 my $opt_verbose;
 my $opt_match;
+my $opt_help;
 
 my $answer = "";
 my $crit_count = 0;
@@ -36,8 +40,14 @@ my @additional = ();
 GetOptions(
             "v|verbose"      => \$opt_verbose,
             "m|match=s"      => \$opt_match,
+            "help"           => \$opt_help,
 )
     or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
+
+if ( $opt_help ) {
+    print_help();
+    exit 3;  # Just to signal a non-ok return code
+}
 
 
 my $output = qx/ systemctl list-units --all --output json --no-page /;
@@ -144,3 +154,27 @@ exit 2 if $status eq "Critical";
 exit 1 if $status eq "Warning";
 exit 0 if $status eq "Ok";
 exit 3; # 'Unknown' return code
+
+
+
+
+# Sub routine
+sub print_help() {
+
+    print STDERR <<~"END"
+    Check systemd unit status.
+
+    Usage: $0 -m MATCHDEF
+
+    Example: $0
+             Warns if some systemd units are in activating state
+
+    Parameters:
+
+        -h, --help         Show this help text
+        -v, --verbose      Verbose output (for debugging)
+        -m, --match DEF    Check only units regex-matching DEF
+
+    END
+
+}
