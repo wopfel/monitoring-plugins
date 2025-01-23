@@ -42,11 +42,10 @@ GetOptions(
 
 my $output = qx/ systemctl list-units --all --output json --no-page /;
 
-#TODO check return code
-#unless ( $response->is_success ) {
-#    print "UNKNOWN: " . $response->status_line;
-#    exit 3;
-#}
+if ( $? != 0 ) {
+    print "UNKNOWN: wrong return code from systemctl.\n";
+    exit 3;
+}
 
 print $output if $opt_verbose;
 
