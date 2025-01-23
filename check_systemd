@@ -22,8 +22,6 @@ use Getopt::Long;
 # Sub routines
 sub print_help();
 
-#my $opt_host;
-#my $opt_item;
 my $opt_verbose;
 my $opt_match;
 my $opt_help;
