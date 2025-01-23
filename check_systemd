@@ -85,6 +85,10 @@ for my $unit ( @{ $json } ) {
             $warn_count++;
             push @additional, "[WARNING] Unit '$name' is activating";
             $count_wrong++;
+    } elsif ( $opt_match and $unit->{'active'} eq "inactive" ) {
+            $warn_count++;
+            push @additional, "[WARNING] Unit '$name' is inactive";
+            $count_wrong++;
     }
 
     $count_active++  if  $unit->{'active'} eq "active";
