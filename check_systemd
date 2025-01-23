@@ -105,9 +105,9 @@ if ( $opt_match  and  $count_matched > $count_active ) {
     push @additional, "[WARNING] $count_active of $count_matched matched units active";
 }
 
-$answer .= "$count_active active units";
-$answer .= ": " . ( join ", ", @matched_units )  if  @matched_units;
-$answer .= ". ";
+push @additional, "Matched units: " . ( join ", ", @matched_units )  if  @matched_units;
+
+$answer .= "$count_active active units. ";
 $answer .= "$count_wrong suspicious units. "  if  $count_wrong;
 
 #    for my $sensor ( @{ $response_json->{'Results'} } ) {
