@@ -22,7 +22,6 @@ use Getopt::Long;
 sub print_help();
 
 my $opt_device;
-my $opt_direction;
 my $opt_verbose;
 #my $opt_warn;
 my $opt_help;
@@ -37,7 +36,6 @@ my @additional = ();
 
 # Process command line options
 GetOptions( "d|device=s"         => \$opt_device,
-            "x|direction=s"      => \$opt_direction,
             "v|verbose"          => \$opt_verbose,
 #            "w|warn=s"           => \$opt_warn,
             "help"               => \$opt_help,
@@ -54,35 +52,40 @@ if ( $opt_device !~ /^eth\d+$/ ) {
     exit 1;
 }
 
-if ( $opt_direction !~ /^[rt]x$/ ) {
-    print STDERR "Invalid direction. Must match 'rx' or 'tx'.\n";
-    exit 1;
-}
 
-my $stat_filename = "/sys/class/net/$opt_device/statistics/${opt_direction}_bytes";
+###
 
-print "Using file '$stat_filename'.\n"  if  $opt_verbose;
 
-my @values;
+my %time_series = ();
 
 # Get the net values 2 times for measuring the difference
 for my $iteration ( 0, 1 ) {
-    open FILE, "<", $stat_filename  or  die "Error: Cannot open file '$stat_filename'.";
-    while ( <FILE> ) {
-        push @values, $_;
+
+    for my $dir ( qw/ tx rx / ) {
+        my $stat_filename = "/sys/class/net/$opt_device/statistics/${dir}_bytes";
+        print "Using file '$stat_filename'.\n"  if  $opt_verbose;
+        open FILE, "<", $stat_filename  or  die "Error: Cannot open file '$stat_filename'.";
+	$time_series{ $dir }{ $iteration } = <FILE>;
+        close FILE  or  die "Error: Cannot close file '$stat_filename'.";
     }
-    close FILE  or  die "Error: Cannot close file '$stat_filename'.";
+
     # Sleep some seconds between iterations
     sleep 5  if  $iteration == 0;
+
 }
 
-my $diff = $values[1] - $values[0];
+my $diff_rx = $time_series{'rx'}{1} - $time_series{'rx'}{0};
+my $diff_tx = $time_series{'tx'}{1} - $time_series{'tx'}{0};
 
-my $diff_per_second = $diff / 5;
+my $diff_per_second_rx = $diff_rx / 5;
+my $diff_per_second_tx = $diff_tx / 5;
 
-$answer .= sprintf "%s %s %.2f kB/sec. ", $opt_device, $opt_direction, $diff_per_second/1000;
+$answer .= "$opt_device: ";
+$answer .= sprintf "%.2f kB/sec in, ", $diff_per_second_rx/1000;
+$answer .= sprintf "%.2f kB/sec out. ", $diff_per_second_tx/1000;
 
-push @perfdata, sprintf "traffic=%.2fkB", $diff_per_second/1000;
+push @perfdata, sprintf "traffic_rx=%.2fkB", $diff_per_second_rx/1000;
+push @perfdata, sprintf "traffic_tx=%.2fkB", $diff_per_second_tx/1000;
 
 ###
 
@@ -119,10 +122,9 @@ sub print_help() {
 
     Parameters:
 
-        -d, --device DEV      Check DEV network device (eth0 for example)
-        -x, --direction DIR   Check DIR direction (tx or rx)
-        -h, --help            Show this help text
-        -v, --verbose         Verbose output (for debugging)
+        -d, --device DEV    Check DEV network device (eth0 for example)
+        -h, --help          Show this help text
+        -v, --verbose       Verbose output (for debugging)
 
     END
 
