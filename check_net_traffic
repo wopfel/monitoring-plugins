@@ -116,9 +116,9 @@ sub print_help() {
     print STDERR <<~"END"
     Check Linux network traffic.
 
-    Usage: $0 -d DEV -x DIRECTION
+    Usage: $0 -d DEV
 
-    Example: $0 -d eth0 -x tx
+    Example: $0 -d eth0
 
     Parameters:
 
