@@ -1,0 +1,129 @@
+#!/usr/bin/perl
+
+##################
+#
+#  Check the network traffic on a Linux host
+#
+#  Usage:   check_net_traffic -d eth0 -x rx
+#
+#  Copyright (C) 2025 Bernd Arnold
+#  https://github.com/wopfel/monitoring-plugins
+#
+#  Required modules:
+#  - Getopt::Long (for command line option parsing)
+#
+##################
+
+use strict;
+use warnings;
+use Getopt::Long;
+
+# Sub routines
+sub print_help();
+
+my $opt_device;
+my $opt_direction;
+my $opt_verbose;
+#my $opt_warn;
+my $opt_help;
+
+my $answer = "";
+my $crit_count = 0;
+my $warn_count = 0;
+my $status = "Unknown";
+my @perfdata = ();
+my @additional = ();
+
+
+# Process command line options
+GetOptions( "d|device=s"         => \$opt_device,
+            "x|direction=s"      => \$opt_direction,
+            "v|verbose"          => \$opt_verbose,
+#            "w|warn=s"           => \$opt_warn,
+            "help"               => \$opt_help,
+)
+    or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 1; };
+
+if ( $opt_help ) {
+    print_help();
+    exit 10;  # Outside of the official monitoring plugin's exit codes
+}
+
+if ( $opt_device !~ /^eth\d+$/ ) {
+    print STDERR "Invalid device '$opt_device'. Must match 'eth0' for example.\n";
+    exit 1;
+}
+
+if ( $opt_direction !~ /^[rt]x$/ ) {
+    print STDERR "Invalid direction. Must match 'rx' or 'tx'.\n";
+    exit 1;
+}
+
+my $stat_filename = "/sys/class/net/$opt_device/statistics/${opt_direction}_bytes";
+
+print "Using file '$stat_filename'.\n"  if  $opt_verbose;
+
+my @values;
+
+# Get the net values 2 times for measuring the difference
+for my $iteration ( 0, 1 ) {
+    open FILE, "<", $stat_filename  or  die "Error: Cannot open file '$stat_filename'.";
+    while ( <FILE> ) {
+        push @values, $_;
+    }
+    close FILE  or  die "Error: Cannot close file '$stat_filename'.";
+    # Sleep some seconds between iterations
+    sleep 5  if  $iteration == 0;
+}
+
+my $diff = $values[1] - $values[0];
+
+my $diff_per_second = $diff / 5;
+
+$answer .= sprintf "%s %s %.2f kB/sec. ", $opt_device, $opt_direction, $diff_per_second/1000;
+
+push @perfdata, sprintf "traffic=%.2fkB", $diff_per_second/1000;
+
+###
+
+if ( $crit_count ) {
+    $status = "Critical";
+} elsif ( $warn_count ) {
+    $status = "Warning";
+} else {
+    $status = "Ok";
+}
+
+print "$status: ";
+print "$answer\n";
+
+print "| " . join(" ", @perfdata) . "\n"  if @perfdata;
+print join("\n", @additional) . "\n"  if @additional;
+
+exit 2 if $status eq "Critical";
+exit 1 if $status eq "Warning";
+exit 0 if $status eq "Ok";
+exit 3; # 'Unknown' return code
+
+
+
+# Sub routine
+sub print_help() {
+
+    print STDERR <<~"END"
+    Check Linux network traffic.
+
+    Usage: $0 -d DEV -x DIRECTION
+
+    Example: $0 -d eth0 -x tx
+
+    Parameters:
+
+        -d, --device DEV      Check DEV network device (eth0 for example)
+        -x, --direction DIR   Check DIR direction (tx or rx)
+        -h, --help            Show this help text
+        -v, --verbose         Verbose output (for debugging)
+
+    END
+
+}
