@@ -50,12 +50,14 @@ if ( ! $opt_password ) {
 
 
 
+#
 # Login
+#
+
 my $ua = LWP::UserAgent->new;
 $ua->ssl_opts(verify_hostname => 0);
 $ua->ssl_opts(SSL_verify_mode => 0x00);
 my $url = "https://$opt_host/api/auth";
-#my $response = $ua->post( $url, [ 'password' => $password ] );
 
 # https://docs.pi-hole.net/api/auth/
 my $req = HTTP::Request->new( 'POST', $url );
@@ -85,7 +87,10 @@ unless ( $response->is_success ) {
 }
 
 
-# Query
+#
+# Query stats summary
+#
+
 $req = HTTP::Request->new( 'GET', "https://$opt_host/api/stats/summary" );
 $req->header( 'Content-Type' => 'application/json' );
 $req->content( '{"sid":"'.$sid.'"}' );
@@ -109,7 +114,11 @@ push @perfdata, "blocked=$blocked_queries";
 
 $answer .= "$total_queries total queries, $blocked_queries blocked. ";
 
-# Query 2
+
+#
+# Query blocking status
+#
+
 $req = HTTP::Request->new( 'GET', "https://$opt_host/api/dns/blocking" );
 $req->header( 'Content-Type' => 'application/json' );
 $req->content( '{"sid":"'.$sid.'"}' );
@@ -137,11 +146,13 @@ if ( $blocking_status eq "enabled" ) {
 
 $answer .= "Pi-hole is $blocking_status, ";
 
-# OK: Pi-hole is enabled: queries today - 19067, domains blocked: 1285, percentage blocked: 6.739393|queries=19067 blocked=1285
 
 
 
+#
 # Logout
+#
+
 # didn't work: $response = $ua->delete( $url, 'X-FTL-SID' => $sid );
 $req = HTTP::Request->new( 'DELETE', $url );
 $req->header( 'Content-Type' => 'application/json' );
