@@ -7,7 +7,6 @@
 #  Usage:   check_pihole_api --hostname <HOST> --password <API_PASSWORD>
 #
 #  Copyright (C) 2025 Bernd Arnold
-#  #TODO https://github.com/wopfel/monitoring-plugins
 #
 ##################
 
