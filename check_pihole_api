@@ -1,0 +1,182 @@
+#!/usr/bin/perl
+
+##################
+#
+#  Check Pihole API
+#
+#  Usage:   ...
+#
+#  Copyright (C) 2025 Bernd Arnold
+#  #TODO https://github.com/wopfel/monitoring-plugins
+#
+##################
+
+
+use strict;
+use warnings;
+use LWP::UserAgent;
+use JSON;
+use Data::Dumper;
+use Getopt::Long;
+
+my $opt_host;
+my $opt_password;
+my $opt_verbose;
+
+my $answer = "";
+my $crit_count = 0;
+my $warn_count = 0;
+my $status = "Unknown";
+my @perfdata = ();
+my @additional = ();
+
+
+# Process command line options
+GetOptions( "h|hostname=s"   => \$opt_host,
+            "p|password=s"   => \$opt_password,
+            "v|verbose"      => \$opt_verbose,
+)
+    or do { print STDERR "Error in command line argument processing.\n"; exit 1; };
+
+
+if ( ! $opt_host ) {
+    print STDERR "Error: option --host missing.\n";
+    exit 4;
+}
+
+if ( ! $opt_password ) {
+    print STDERR "Error: option --password missing.\n";
+    exit 4;
+}
+
+
+
+# Login
+my $ua = LWP::UserAgent->new;
+$ua->ssl_opts(verify_hostname => 0);
+$ua->ssl_opts(SSL_verify_mode => 0x00);
+my $url = "https://$opt_host/api/auth";
+#my $response = $ua->post( $url, [ 'password' => $password ] );
+
+# https://docs.pi-hole.net/api/auth/
+my $req = HTTP::Request->new( 'POST', $url );
+$req->header( 'Content-Type' => 'application/json' );
+$req->content( '{"password":"'.$opt_password.'"}' );
+
+my $response = $ua->request( $req );
+unless ( $response->is_success ) {
+    print "UNKNOWN: " . $response->status_line;
+    exit 3;
+}
+
+print Dumper( $response->decoded_content )  if  $opt_verbose;
+#print Dumper( $response );
+
+my $json = $response->decoded_content;
+print Dumper( $json )  if  $opt_verbose;
+my $response_json = decode_json( $json );
+print Dumper( $response_json )  if  $opt_verbose;
+
+my $sid = $response_json->{'session'}{'sid'};
+print Dumper( $sid )  if  $opt_verbose;
+
+unless ( $response->is_success ) {
+    print "UNKNOWN: " . $response->status_line;
+    exit 3;
+}
+
+
+# Query
+$req = HTTP::Request->new( 'GET', "https://$opt_host/api/stats/summary" );
+$req->header( 'Content-Type' => 'application/json' );
+$req->content( '{"sid":"'.$sid.'"}' );
+
+$response = $ua->request( $req );
+print Dumper( $response )  if  $opt_verbose;
+unless ( $response->is_success ) {
+    print "UNKNOWN: " . $response->status_line;
+    exit 3;
+}
+
+$json = $response->decoded_content;
+$response_json = decode_json( $json );
+print Dumper( $response_json )  if  $opt_verbose;
+
+my $total_queries = $response_json->{'queries'}{'total'};
+my $blocked_queries = $response_json->{'queries'}{'blocked'};
+
+push @perfdata, "queries=$total_queries";
+push @perfdata, "blocked=$blocked_queries";
+
+$answer .= "$total_queries total queries, $blocked_queries blocked. ";
+
+# Query 2
+$req = HTTP::Request->new( 'GET', "https://$opt_host/api/dns/blocking" );
+$req->header( 'Content-Type' => 'application/json' );
+$req->content( '{"sid":"'.$sid.'"}' );
+
+$response = $ua->request( $req );
+print Dumper( $response )  if  $opt_verbose;
+unless ( $response->is_success ) {
+    print "UNKNOWN: " . $response->status_line;
+    exit 3;
+}
+
+$json = $response->decoded_content;
+$response_json = decode_json( $json );
+print Dumper( $response_json )  if  $opt_verbose;
+
+my $blocking_status = $response_json->{'blocking'};
+print Dumper( $blocking_status )  if  $opt_verbose;
+
+if ( $blocking_status eq "enabled" ) {
+    push @additional, "[OK] Pi-hole is $blocking_status.";
+} else {
+    $warn_count++;
+    push @additional, "[WARNING] Pi-hole is $blocking_status.";
+}
+
+$answer .= "Pi-hole is $blocking_status, ";
+
+# OK: Pi-hole is enabled: queries today - 19067, domains blocked: 1285, percentage blocked: 6.739393|queries=19067 blocked=1285
+
+
+
+# Logout
+# didn't work: $response = $ua->delete( $url, 'X-FTL-SID' => $sid );
+$req = HTTP::Request->new( 'DELETE', $url );
+$req->header( 'Content-Type' => 'application/json' );
+$req->content( '{"sid":"'.$sid.'"}' );
+
+$response = $ua->request( $req );
+unless ( $response->is_success ) {
+    print "UNKNOWN: " . $response->status_line;
+    exit 3;
+}
+print Dumper( $response )  if  $opt_verbose;
+
+
+
+#
+# Build output
+#
+
+if ( $crit_count ) {
+    $status = "Critical";
+} elsif ( $warn_count ) {
+    $status = "Warning";
+} else {
+    $status = "Ok";
+}
+
+print "$status: ";
+print "$answer\n";
+
+print "| " . join(" ", @perfdata) . "\n"  if @perfdata;
+print join("\n", @additional) . "\n"  if @additional;
+
+exit 2 if $status eq "Critical";
+exit 1 if $status eq "Warning";
+exit 0 if $status eq "Ok";
+exit 3; # 'Unknown' return code
+
