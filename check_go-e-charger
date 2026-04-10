@@ -1,0 +1,164 @@
+#!/usr/bin/perl
+
+##################
+#
+#  Check a go-e charger v1
+#
+#  Usage:   ...
+#
+#  Copyright (C) 2026 Bernd Arnold
+#  https://github.com/wopfel/monitoring-plugins
+#
+##################
+
+use strict;
+use warnings;
+require LWP::UserAgent;
+use JSON;
+use Data::Dumper;
+use Getopt::Long;
+
+# Sub routines
+sub print_help();
+
+my $opt_verbose;
+my $opt_host;
+my $opt_help;
+
+my $answer = "";
+my $crit_count = 0;
+my $warn_count = 0;
+my $status = "Unknown";
+my @perfdata = ();
+my @additional = ();
+
+
+#
+# Process command line options
+#
+
+GetOptions( "h|hostname=s"       => \$opt_host,
+            "v|verbose"          => \$opt_verbose,
+            "help"               => \$opt_help,
+          )
+or do { print STDERR "Error in command line argument processing. Try '$0 -help'.\n"; exit 4; };
+
+if ( $opt_help ) {
+    print_help();
+    exit 4;  # Outside of the official monitoring plugin's exit codes
+}
+
+if ( ! $opt_host ) {
+    print STDERR "Error: option -host missing.\n";
+    exit 4;
+}
+
+
+#
+# Query device
+#
+
+my $ua = LWP::UserAgent->new;
+
+my $response = $ua->get( "http://$opt_host/status" );
+
+if ( $response->is_success ) {
+}
+else {
+    print "UNKNOWN: $response->status_line";
+    exit 3;
+}
+
+print $response->decoded_content if $opt_verbose;
+
+my $response_json = decode_json( $response->decoded_content );
+
+print Dumper( $response_json ) if $opt_verbose;
+if ( my $friendlyname = $response_json->{'Status'}->{'FriendlyName'}->[0] ) {
+    $answer .= "$friendlyname. "
+}
+
+
+#
+# Grab perfdata
+#
+
+# For field descriptions, see https://github.com/goecharger/go-eCharger-API-v1/blob/master/go-eCharger%20API%20v1%20EN.md
+
+push @perfdata, sprintf("energy_total_kWh=%.2f", $response_json->{'eto'} / 10);
+push @perfdata, sprintf("total_power_kW=%.2f", $response_json->{'nrg'}->[11] / 100);
+push @perfdata, sprintf("unlock_state=%d", $response_json->{'ust'});
+push @perfdata, sprintf("charged_energy_kWh=%.3f", $response_json->{'dws'} * 10/3600/1000);  # deca watt seconds
+push @perfdata, sprintf("allow_charging=%d", $response_json->{'alw'});
+push @perfdata, sprintf("ampere=%d", $response_json->{'amp'});
+push @perfdata, sprintf("status_pwm_signaling=%d", $response_json->{'car'});
+push @perfdata, sprintf("access_state=%d", $response_json->{'ast'});
+push @perfdata, sprintf("stop_state=%d", $response_json->{'stp'});
+push @perfdata, sprintf("shutdown_value_kWh=%.1f", $response_json->{'dwo'} / 10);
+
+
+
+#
+# Check results
+#
+
+# Check access state
+if ( $response_json->{'ast'} == 1 ) {
+    push @additional, "[OK] Access state is 'RFID / App needed'";
+} else {
+    $warn_count++;
+    push @additional, "[WARNING] Access state wrong";
+}
+
+
+
+$answer .= sprintf("Power %.2f kW. ", $response_json->{'nrg'}->[11] / 100);
+
+
+###
+
+if ( $crit_count ) {
+    $status = "Critical";
+} elsif ( $warn_count ) {
+    $status = "Warning";
+} else {
+    $status = "Ok";
+}
+
+print "$status: ";
+print "$answer\n";
+
+print "| " . join(" ", @perfdata) . "\n"  if @perfdata;
+print join("\n", @additional) . "\n"  if @additional;
+
+exit 2 if $status eq "Critical";
+exit 1 if $status eq "Warning";
+exit 0 if $status eq "Ok";
+exit 3;  # 'Unknown' return code
+
+
+
+#
+# Print help
+#
+
+sub print_help() {
+
+    print STDERR <<~"END"
+    Check go-eCharger.
+
+    Usage: $0 --host HOSTNAME]
+
+    Example: $0
+             Warning when access state unequal 1
+
+
+    Parameters:
+
+        -h, --help              Show this help text
+        -H, --host HOSTNAME     Connect to HOSTNAME
+        -v, --verbose           Verbose output (for debugging)
+
+    END
+
+}
